@@ -1,0 +1,81 @@
+---
+import Page from '../layouts/Page.astro';
+import Header from '../components/Header.astro';
+
+type PostModule = {
+  frontmatter: { title: string; date: string; excerpt?: string; draft?: boolean };
+  Content: any;
+};
+
+const modules = import.meta.glob<PostModule>('../posts/*.mdx', { eager: true });
+const posts = Object.entries(modules)
+  .map(([path, mod]) => ({
+    slug: path.split('/').pop()!.replace(/\.mdx$/, ''),
+    title: mod.frontmatter.title,
+    date: new Date(mod.frontmatter.date),
+    draft: !!mod.frontmatter.draft,
+    Content: mod.Content,
+  }))
+  .filter((p) => !p.draft)
+  .sort((a, b) => b.date.valueOf() - a.date.valueOf());
+
+const fmtDay = (d: Date) =>
+  `${String(d.getUTCDate()).padStart(2, '0')}/${String(d.getUTCMonth() + 1).padStart(2, '0')}`;
+
+// Group by year, preserve sort order
+const yearGroups: Array<{ year: number; items: typeof posts }> = [];
+for (const p of posts) {
+  const y = p.date.getUTCFullYear();
+  let group = yearGroups.find((g) => g.year === y);
+  if (!group) {
+    group = { year: y, items: [] };
+    yearGroups.push(group);
+  }
+  group.items.push(p);
+}
+
+const latest = posts[0];
+const LatestContent = latest?.Content;
+---
+
+<Page title="Azuolas / writing" description="Writing.">
+  <Header section="writing" />
+
+  <section class="mt-10">
+    <ul class="space-y-1">
+      {yearGroups.flatMap((group) =>
+        group.items.map((post, i) => (
+          <li class="flex items-baseline gap-6 text-[15px]">
+            <span class="text-neutral-400 tabular-nums w-12 shrink-0">
+              {i === 0 ? group.year : ''}
+            </span>
+            <a
+              href={`#${post.slug}`}
+              class="flex-1 text-neutral-900 underline decoration-transparent hover:decoration-neutral-300 underline-offset-[3px] transition-colors"
+            >
+              {post.title}
+            </a>
+            <span class="text-neutral-400 tabular-nums shrink-0">{fmtDay(post.date)}</span>
+          </li>
+        ))
+      )}
+    </ul>
+  </section>
+
+  {latest && LatestContent && (
+    <article
+      id={latest.slug}
+      class="mt-20 prose prose-neutral max-w-none
+             prose-headings:font-medium prose-headings:tracking-tight
+             prose-h1:text-[19px] prose-h2:text-[18px] prose-h3:text-[17px]
+             prose-p:text-[17px] prose-p:leading-relaxed prose-li:text-[17px]
+             prose-a:text-neutral-900 prose-a:decoration-neutral-300 prose-a:decoration-1 prose-a:underline-offset-[3px] hover:prose-a:decoration-neutral-900"
+    >
+      <h2 class="!mt-0 !mb-1 text-[19px]">{latest.title}</h2>
+      <p class="!mt-0 !mb-8 text-sm text-neutral-500">
+        {fmtDay(latest.date)}/{latest.date.getUTCFullYear()}
+      </p>
+      <LatestContent />
+    </article>
+  )}
+</Page>

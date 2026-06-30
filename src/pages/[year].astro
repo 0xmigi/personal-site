@@ -1,0 +1,45 @@
+---
+import Page from '../layouts/Page.astro';
+import Back from '../components/Back.astro';
+import YearHeatmap from '../components/YearHeatmap.astro';
+import { getItems } from '../lib/content';
+import { fmtMonthDay, yearOf } from '../lib/date';
+
+export async function getStaticPaths() {
+  const years = [...new Set(getItems().map((it) => yearOf(it.date)))];
+  return years.map((year) => ({ params: { year: String(year) }, props: { year } }));
+}
+
+const { year } = Astro.props as { year: number };
+
+const items = getItems()
+  .filter((it) => yearOf(it.date) === year)
+  .sort((a, b) => new Date(b.date).valueOf() - new Date(a.date).valueOf());
+
+const dates = items.map((it) => it.date);
+
+const linkClass =
+  'text-neutral-900 underline decoration-transparent hover:decoration-neutral-300 underline-offset-[3px] transition-colors';
+---
+
+<Page title={`${year} — Azuolas`} description={`Everything from ${year}.`}>
+  <Back href="/" />
+
+  <h1 class="mt-6 text-[22px] font-medium tabular-nums tracking-tight text-neutral-900">{year}</h1>
+
+  <div class="mt-8 flex items-start gap-8">
+    <YearHeatmap year={year} dates={dates} />
+
+    <ul class="min-w-0 flex-1 space-y-2.5 text-[15px]">
+      {items.map((it) => (
+        <li class="flex items-baseline justify-between gap-4">
+          <a href={it.href} class={linkClass}>{it.title}</a>
+          <span class="flex shrink-0 items-baseline gap-3 text-[13px] text-neutral-400">
+            <span>{it.tag}</span>
+            <time class="w-12 text-right tabular-nums">{fmtMonthDay(it.date)}</time>
+          </span>
+        </li>
+      ))}
+    </ul>
+  </div>
+</Page>

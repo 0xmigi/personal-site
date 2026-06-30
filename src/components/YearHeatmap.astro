@@ -1,0 +1,58 @@
+---
+interface Props {
+  year: number;
+  dates: string[]; // YYYY-MM-DD strings that should be lit
+}
+
+const { year, dates } = Astro.props;
+const filled = new Set(dates);
+
+const jan1DOW = new Date(Date.UTC(year, 0, 1)).getUTCDay(); // 0=Sun
+const isLeap = (year % 4 === 0 && year % 100 !== 0) || year % 400 === 0;
+const daysInYear = isLeap ? 366 : 365;
+
+const pad = (n: number) => String(n).padStart(2, '0');
+
+type Cell = { iso: string; filled: boolean } | null;
+
+let maxRow = 0;
+const days: { row: number; col: number; iso: string; filled: boolean }[] = [];
+for (let i = 0; i < daysInYear; i++) {
+  const d = new Date(Date.UTC(year, 0, 1 + i));
+  const col = d.getUTCDay();
+  const row = Math.floor((i + jan1DOW) / 7);
+  if (row > maxRow) maxRow = row;
+  const iso = `${year}-${pad(d.getUTCMonth() + 1)}-${pad(d.getUTCDate())}`;
+  days.push({ row, col, iso, filled: filled.has(iso) });
+}
+
+// newest week at the top
+const grid: Cell[][] = Array.from({ length: maxRow + 1 }, () => Array<Cell>(7).fill(null));
+for (const d of days) {
+  grid[maxRow - d.row][d.col] = { iso: d.iso, filled: d.filled };
+}
+const flat = grid.flat();
+---
+
+<div class="grid w-fit grid-cols-[repeat(7,7px)] gap-[3px]">
+  {flat.map((cell) =>
+    cell ? (
+      <span class:list={['hday', cell.filled && 'hday-on']} title={cell.iso} />
+    ) : (
+      <span class="block h-[7px] w-[7px]" />
+    ),
+  )}
+</div>
+
+<style>
+  .hday {
+    display: block;
+    width: 7px;
+    height: 7px;
+    border-radius: 2px;
+    background: #ededed;
+  }
+  .hday-on {
+    background: #404040;
+  }
+</style>

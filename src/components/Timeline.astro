@@ -5,7 +5,6 @@ export interface TimelineItem {
   title: string;
   href: string;
   date: string;
-  url?: string;
   tag?: string;
 }
 
@@ -21,7 +20,8 @@ const sorted = [...items].sort(
 
 const weekOf = (d: Date) => Math.min(3, Math.floor((d.getUTCDate() - 1) / 7));
 
-type Row = { year: number; items: (TimelineItem & { cell: string })[]; filled: Set<string> };
+type Item = TimelineItem & { cell: string };
+type Row = { year: number; items: Item[]; filled: Set<string> };
 
 const groups: Row[] = [];
 for (const it of sorted) {
@@ -38,7 +38,7 @@ for (const it of sorted) {
   g.items.push({ ...it, cell: `${y}-${m}-${w}` });
 }
 
-// 12 months (rows, December at top → January at bottom) x 4 weeks (cols)
+// 12 months (rows, December at top) x 4 weeks (cols)
 const cells = Array.from({ length: 12 }, (_, i) => {
   const m = 11 - i;
   return Array.from({ length: 4 }, (_, w) => ({ m, w }));
@@ -51,7 +51,12 @@ const linkClass =
 <div class="space-y-8 text-[15px]">
   {groups.map((g) => (
     <div class="flex items-start gap-6">
-      <div class="w-10 shrink-0 tabular-nums text-neutral-400">{g.year}</div>
+      <a
+        href={`/${g.year}`}
+        class="w-10 shrink-0 tabular-nums text-neutral-400 transition-colors hover:text-neutral-900"
+      >
+        {g.year}
+      </a>
 
       <div class="grid shrink-0 grid-cols-[repeat(4,4px)] gap-[5px] pt-[7px]">
         {cells.map(({ m, w }) => (
@@ -62,7 +67,7 @@ const linkClass =
         ))}
       </div>
 
-      <ul class="flex-1 space-y-2.5">
+      <ul class="min-w-0 flex-1 space-y-2.5">
         {g.items.map((it) => (
           <li class="flex items-baseline justify-between gap-4">
             <a href={it.href} class={linkClass} data-tl-link={it.cell} title={fmtDate(it.date)}>

@@ -4,9 +4,6 @@ interface Props {
 }
 
 const { section } = Astro.props;
-
-const linkClass =
-  'text-neutral-900 underline decoration-neutral-300 decoration-1 underline-offset-[3px] hover:decoration-neutral-900 transition-colors';
 ---
 
 <p class="text-[17px] leading-relaxed">
@@ -16,23 +13,3 @@ const linkClass =
     <span class="font-medium">Azuolas</span>
   )}{section && <span class="text-neutral-500"> / {section}</span>}
 </p>
-
-{!section && (
-  <p class="mt-4 text-[17px] leading-relaxed text-neutral-800">
-    Engineer and founder building <a href="https://x.com/0xmigi" target="_blank" rel="noopener noreferrer" class={linkClass}>Moment</a>. Previously full-stack across crypto, AI, and consumer. Based in NYC.
-  </p>
-)}
-
-{!section && (
-  <ul class="mt-10 ml-6 text-[17px] leading-relaxed space-y-1">
-    <li><a href="/writing" class={linkClass}>writing</a></li>
-    <li><a href="/videos" class={linkClass}>videos</a></li>
-  </ul>
-)}
-
-{!section && (
-  <ul class="mt-4 ml-6 text-[17px] leading-relaxed space-y-1">
-    <li><a href="https://github.com/0xmigi" target="_blank" rel="noopener noreferrer" class={linkClass}>github</a></li>
-    <li><a href="https://x.com/0xmigi" target="_blank" rel="noopener noreferrer" class={linkClass}>twitter</a></li>
-  </ul>
-)}

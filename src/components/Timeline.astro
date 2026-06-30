@@ -1,0 +1,104 @@
+---
+import { fmtDate, yearOf } from '../lib/date';
+
+export interface TimelineItem {
+  title: string;
+  href: string;
+  date: string;
+  url?: string;
+  tag?: string;
+}
+
+interface Props {
+  items: TimelineItem[];
+}
+
+const { items } = Astro.props;
+
+const sorted = [...items].sort(
+  (a, b) => new Date(b.date).valueOf() - new Date(a.date).valueOf(),
+);
+
+const weekOf = (d: Date) => Math.min(3, Math.floor((d.getUTCDate() - 1) / 7));
+
+type Row = { year: number; items: (TimelineItem & { cell: string })[]; filled: Set<string> };
+
+const groups: Row[] = [];
+for (const it of sorted) {
+  const y = yearOf(it.date);
+  let g = groups.find((x) => x.year === y);
+  if (!g) {
+    g = { year: y, items: [], filled: new Set() };
+    groups.push(g);
+  }
+  const d = new Date(it.date);
+  const m = d.getUTCMonth();
+  const w = weekOf(d);
+  g.filled.add(`${m}-${w}`);
+  g.items.push({ ...it, cell: `${y}-${m}-${w}` });
+}
+
+// 12 months (rows, December at top → January at bottom) x 4 weeks (cols)
+const cells = Array.from({ length: 12 }, (_, i) => {
+  const m = 11 - i;
+  return Array.from({ length: 4 }, (_, w) => ({ m, w }));
+}).flat();
+
+const linkClass =
+  'text-neutral-900 underline decoration-transparent hover:decoration-neutral-300 underline-offset-[3px] transition-colors';
+---
+
+<div class="space-y-8 text-[15px]">
+  {groups.map((g) => (
+    <div class="flex items-start gap-6">
+      <div class="w-10 shrink-0 tabular-nums text-neutral-400">{g.year}</div>
+
+      <div class="grid shrink-0 grid-cols-[repeat(4,4px)] gap-[5px] pt-[7px]">
+        {cells.map(({ m, w }) => (
+          <span
+            class:list={['dot', g.filled.has(`${m}-${w}`) && 'dot-filled']}
+            data-tl-dot={`${g.year}-${m}-${w}`}
+          />
+        ))}
+      </div>
+
+      <ul class="flex-1 space-y-2.5">
+        {g.items.map((it) => (
+          <li class="flex items-baseline justify-between gap-4">
+            <a href={it.href} class={linkClass} data-tl-link={it.cell} title={fmtDate(it.date)}>
+              {it.title}
+            </a>
+            {it.tag && <span class="shrink-0 text-[13px] text-neutral-400">{it.tag}</span>}
+          </li>
+        ))}
+      </ul>
+    </div>
+  ))}
+</div>
+
+<style>
+  .dot {
+    width: 4px;
+    height: 4px;
+    border-radius: 9999px;
+    background: #e5e5e5;
+    transition: transform 0.12s ease, background-color 0.12s ease;
+  }
+  .dot-filled {
+    background: #404040;
+  }
+  .dot-active {
+    transform: scale(2.2);
+    background: #171717;
+  }
+</style>
+
+<script is:inline>
+  document.querySelectorAll('[data-tl-link]').forEach((link) => {
+    const cell = link.getAttribute('data-tl-link');
+    const dot = document.querySelector(`[data-tl-dot="${cell}"]`);
+    if (!dot) return;
+    link.addEventListener('mouseenter', () => dot.classList.add('dot-active'));
+    link.addEventListener('mouseleave', () => dot.classList.remove('dot-active'));
+  });
+</script>

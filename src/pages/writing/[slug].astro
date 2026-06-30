@@ -1,0 +1,33 @@
+---
+import Page from '../../layouts/Page.astro';
+import Back from '../../components/Back.astro';
+import { fmtDate } from '../../lib/date';
+
+export async function getStaticPaths() {
+  const modules = import.meta.glob('../../posts/*.mdx', { eager: true });
+  return Object.entries(modules).map(([path, mod]) => ({
+    params: { slug: path.split('/').pop()!.replace(/\.mdx$/, '') },
+    props: { mod },
+  }));
+}
+
+const { mod } = Astro.props as { mod: any };
+const fm = mod.frontmatter;
+const Content = mod.Content;
+---
+
+<Page title={`Azuolas / ${fm.title}`} description={fm.excerpt}>
+  <Back />
+
+  <article
+    class="mt-10 prose prose-neutral max-w-none
+           prose-headings:font-medium prose-headings:tracking-tight
+           prose-h1:text-[19px] prose-h2:text-[18px] prose-h3:text-[17px]
+           prose-p:text-[17px] prose-p:leading-relaxed prose-li:text-[17px]
+           prose-a:text-neutral-900 prose-a:decoration-neutral-300 prose-a:decoration-1 prose-a:underline-offset-[3px] hover:prose-a:decoration-neutral-900"
+  >
+    <h1 class="!mt-0 !mb-1 text-[19px]">{fm.title}</h1>
+    <p class="!mt-0 !mb-8 text-sm text-neutral-500">{fmtDate(fm.date)}</p>
+    <Content />
+  </article>
+</Page>

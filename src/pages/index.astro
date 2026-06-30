@@ -1,8 +1,48 @@
 ---
 import Page from '../layouts/Page.astro';
 import Header from '../components/Header.astro';
+import Timeline from '../components/Timeline.astro';
+
+type Frontmatter = { title: string; date: string; draft?: boolean };
+
+const postModules = import.meta.glob<{ frontmatter: Frontmatter }>('../posts/*.mdx', { eager: true });
+const projectModules = import.meta.glob<{ frontmatter: Frontmatter }>('../projects/*.mdx', { eager: true });
+const videoModules = import.meta.glob<{ frontmatter: Frontmatter }>('../videos/*.mdx', { eager: true });
+
+const slugOf = (path: string) => path.split('/').pop()!.replace(/\.mdx$/, '');
+
+const collect = (modules: Record<string, { frontmatter: Frontmatter }>, base: string, tag: string) =>
+  Object.entries(modules).map(([path, mod]) => ({
+    title: mod.frontmatter.title,
+    href: `${base}/${slugOf(path)}`,
+    date: mod.frontmatter.date,
+    draft: mod.frontmatter.draft,
+    tag,
+  }));
+
+const items = [
+  ...collect(postModules, '/writing', 'writing'),
+  ...collect(projectModules, '/projects', 'app'),
+  ...collect(videoModules, '/videos', 'video'),
+].filter((it) => !it.draft);
+
+const linkClass =
+  'text-neutral-900 underline decoration-neutral-300 decoration-1 underline-offset-[3px] hover:decoration-neutral-900 transition-colors';
 ---
 
 <Page title="Azuolas" description="Engineer and founder.">
   <Header />
+
+  <p class="mt-4 text-[17px] leading-relaxed text-neutral-800">
+    Engineer and founder building <a href="https://x.com/0xmigi" target="_blank" rel="noopener noreferrer" class={linkClass}>Moment</a>. Previously full-stack across crypto, AI, and consumer. Based in NYC.
+  </p>
+
+  <section class="mt-12">
+    <Timeline items={items} />
+  </section>
+
+  <ul class="mt-12 ml-[3.5rem] text-[15px] leading-relaxed space-y-1">
+    <li><a href="https://github.com/0xmigi" target="_blank" rel="noopener noreferrer" class={linkClass}>github</a></li>
+    <li><a href="https://x.com/0xmigi" target="_blank" rel="noopener noreferrer" class={linkClass}>twitter</a></li>
+  </ul>
 </Page>

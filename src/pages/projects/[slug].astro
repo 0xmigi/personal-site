@@ -1,0 +1,113 @@
+---
+import Page from '../../layouts/Page.astro';
+import Back from '../../components/Back.astro';
+import { fmtDate } from '../../lib/date';
+
+export async function getStaticPaths() {
+  const modules = import.meta.glob('../../projects/*.mdx', { eager: true });
+  return Object.entries(modules).map(([path, mod]) => ({
+    params: { slug: path.split('/').pop()!.replace(/\.mdx$/, '') },
+    props: { mod },
+  }));
+}
+
+const { mod } = Astro.props as { mod: any };
+const fm = mod.frontmatter;
+const Content = mod.Content;
+const displayUrl = fm.url?.replace(/^https?:\/\//, '').replace(/\/$/, '');
+
+// Live preview renders the site at a desktop width, scaled to a 16:9 landscape box.
+const DESK_W = 1280;
+const DESK_H = 720;
+---
+
+<Page title={`${fm.title} — Azuolas`} description={fm.summary}>
+  <Back />
+
+  {fm.url && (
+    <a
+      href={fm.url}
+      target="_blank"
+      rel="noopener noreferrer"
+      class="mt-6 block overflow-hidden rounded-lg"
+    >
+      <div class="preview">
+        <iframe
+          src={fm.url}
+          title={`${fm.title} preview`}
+          loading="lazy"
+          scrolling="no"
+          tabindex="-1"
+          sandbox="allow-scripts allow-same-origin"
+          data-w={DESK_W}
+          data-h={DESK_H}
+        />
+      </div>
+    </a>
+  )}
+
+  <h1 class="mt-8 text-[22px] font-medium tracking-tight text-neutral-900">{fm.title}</h1>
+
+  <p class="mt-1.5 text-[14px] text-neutral-500">
+    <span class="tabular-nums">{fmtDate(fm.date)}</span>
+    {displayUrl && (
+      <Fragment>
+        <span class="mx-1.5 text-neutral-300">·</span>
+        <a
+          href={fm.url}
+          target="_blank"
+          rel="noopener noreferrer"
+          class="underline decoration-neutral-300 decoration-1 underline-offset-2 transition-colors hover:text-neutral-900 hover:decoration-neutral-500"
+        >{displayUrl}</a>
+      </Fragment>
+    )}
+  </p>
+
+  <article
+    class="mt-8 prose prose-neutral max-w-none
+           prose-headings:font-medium prose-headings:tracking-tight
+           prose-h2:text-[18px] prose-h3:text-[17px]
+           prose-p:text-[17px] prose-p:leading-relaxed prose-li:text-[17px]
+           prose-a:text-neutral-900 prose-a:decoration-neutral-300 prose-a:decoration-1 prose-a:underline-offset-[3px] hover:prose-a:decoration-neutral-900"
+  >
+    <Content />
+  </article>
+
+  {fm.agent && (
+    <p class="mt-12 text-[13px] text-neutral-400">&mdash; written by azuolas&rsquo; agent</p>
+  )}
+</Page>
+
+<style>
+  .preview {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 1280 / 720;
+  }
+  .preview iframe {
+    position: absolute;
+    top: 0;
+    left: 0;
+    border: 0;
+    transform-origin: top left;
+    pointer-events: none;
+  }
+</style>
+
+<script is:inline>
+  function fitPreviews() {
+    document.querySelectorAll('.preview').forEach((box) => {
+      const f = box.querySelector('iframe');
+      if (!f) return;
+      const w = parseInt(f.dataset.w, 10);
+      const h = parseInt(f.dataset.h, 10);
+      const scale = box.clientWidth / w;
+      f.style.width = w + 'px';
+      f.style.height = h + 'px';
+      f.style.transform = 'scale(' + scale + ')';
+    });
+  }
+  fitPreviews();
+  window.addEventListener('resize', fitPreviews);
+  window.addEventListener('load', fitPreviews);
+</script>

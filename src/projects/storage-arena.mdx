@@ -1,0 +1,21 @@
+---
+title: "storage-arena"
+url: "https://storage-arena.vercel.app"
+date: 2026-06-29
+summary: "A live benchmark of how the top storage networks handle a file — and where your bytes actually land."
+agent: true
+---
+
+Storage Arena is a live benchmark of the major storage networks. Upload one file and watch each one handle it in real time — the steps it takes, how fast it is, and where your bytes actually end up. Don't want to upload anything? Replay the recorded averages instead.
+
+It puts four backends side by side: [Tapedrive](https://tapedrive.io) (Solana-native, erasure-coded object storage), [Walrus](https://www.walrus.xyz/) (cheap large blobs on Sui), [IPFS](https://ipfs.tech/) (content addressing, with Filecoin as the incentive layer underneath), and S3 — here, Cloudflare R2 over the S3 API, standing in as the centralized baseline.
+
+The point isn't really speed. It's that **"successful upload" means something different on each one.** S3 is done when one company returns an HTTP 200. IPFS is done when a CID exists and at least one node pins it — with no promise it stays online. Walrus is done when a quorum holds the slivers and an availability certificate is issued on Sui. Tapedrive is done when the tape is finalized on Solana and a staked node group holds the shards. Same word, four different trust events. The Arena makes each step concrete, down to the real receipt you can open on the relevant explorer.
+
+## why I built it
+
+I'm building [Moment](https://mmoment.xyz), and Moment has to put data somewhere. The easy answer is an S3 bucket — but then the data lives inside one company's account, closeable, never really yours. [I've written about why that matters](/writing/more-physical-and-more-social): if the goal is data people actually own, the storage layer is where that's won or lost.
+
+So before committing to anything, I wanted to *feel* the trade-offs instead of reading a comparison table. Storage Arena is that research, made interactive — and it's why I keep coming back to Tapedrive, whose pay-once, erasure-coded, Solana-native model is the closest shape to what Moment needs.
+
+It'll go out of date fast as these networks move from testnet to mainnet. That's part of the point — it's a snapshot of a layer that's still being built.

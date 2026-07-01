@@ -25,16 +25,16 @@ const linkClass =
 <Page title={`${year} — Azuolas`} description={`Everything from ${year}.`}>
   <Back href="/" />
 
-  <h1 class="mt-6 text-[22px] font-medium tabular-nums tracking-tight text-neutral-900">{year}</h1>
+  <h1 class="mt-6 text-[14px] font-medium tabular-nums tracking-tight text-neutral-900">{year}</h1>
 
   <div class="mt-8 flex items-start gap-8">
     <YearHeatmap year={year} dates={dates} />
 
-    <ul class="min-w-0 flex-1 space-y-2.5 text-[15px]">
+    <ul class="min-w-0 flex-1 space-y-2.5 text-[14px]">
       {items.map((it) => (
         <li class="flex items-baseline justify-between gap-4">
           <a href={it.href} class={linkClass}>{it.title}</a>
-          <span class="flex shrink-0 items-baseline gap-3 text-[13px] text-neutral-400">
+          <span class="flex shrink-0 items-baseline gap-3 text-[14px] text-neutral-400">
             <span>{it.tag}</span>
             <time class="w-12 text-right tabular-nums">{fmtMonthDay(it.date)}</time>
           </span>

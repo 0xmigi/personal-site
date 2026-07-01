@@ -4,6 +4,7 @@ type Mod = { frontmatter: Frontmatter };
 const postModules = import.meta.glob<Mod>('../posts/*.mdx', { eager: true });
 const projectModules = import.meta.glob<Mod>('../projects/*.mdx', { eager: true });
 const videoModules = import.meta.glob<Mod>('../videos/*.mdx', { eager: true });
+const workModules = import.meta.glob<Mod>('../work/*.mdx', { eager: true });
 
 export interface Item {
   title: string;
@@ -31,5 +32,6 @@ export function getItems(): Item[] {
     ...collect(postModules, '/writing', 'writing'),
     ...collect(projectModules, '/projects', 'app'),
     ...collect(videoModules, '/videos', 'video'),
+    ...collect(workModules, '/work', 'work'),
   ];
 }

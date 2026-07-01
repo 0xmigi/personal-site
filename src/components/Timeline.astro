@@ -1,5 +1,5 @@
 ---
-import { fmtDate, yearOf } from '../lib/date';
+import { yearOf } from '../lib/date';
 
 export interface TimelineItem {
   title: string;
@@ -38,6 +38,15 @@ for (const it of sorted) {
   g.items.push({ ...it, cell: `${y}-${m}-${w}` });
 }
 
+const yearsData = groups.map((g) => ({
+  year: g.year,
+  filled: [...g.filled],
+  items: g.items.slice(0, 4).map((it) => ({ title: it.title, href: it.href, tag: it.tag ?? '', cell: it.cell })),
+}));
+
+const WINDOW = Math.min(3, yearsData.length);
+const initial = yearsData.slice(0, WINDOW);
+
 // 12 months (rows, December at top) x 4 weeks (cols)
 const cells = Array.from({ length: 12 }, (_, i) => {
   const m = 11 - i;
@@ -46,42 +55,62 @@ const cells = Array.from({ length: 12 }, (_, i) => {
 
 const linkClass =
   'text-neutral-900 underline decoration-transparent hover:decoration-neutral-300 underline-offset-[3px] transition-colors';
+const titleClass = `min-w-0 flex-1 truncate ${linkClass}`;
+const dotsWrap = 'ml-3 mr-4 grid shrink-0 grid-cols-[repeat(4,4px)] items-center gap-x-[5px]';
+const ctlClass = 'text-[14px] italic text-neutral-400 transition-colors hover:text-neutral-900';
 ---
 
-<div class="space-y-8 text-[15px]">
-  {groups.map((g) => (
-    <div class="flex items-start gap-6">
-      <a
-        href={`/${g.year}`}
-        class="w-10 shrink-0 tabular-nums text-neutral-400 transition-colors hover:text-neutral-900"
-      >
-        {g.year}
-      </a>
+<div class="text-[14px]">
+  {/* newer (top) — aligned to the title column */}
+  <div class="mb-4 flex justify-end pr-2" data-tl-newer-wrap style="visibility: hidden;">
+    <button type="button" data-tl-newer class={ctlClass}>newer</button>
+  </div>
 
-      <div class="grid shrink-0 grid-cols-[repeat(4,4px)] gap-[5px] pt-[7px]">
-        {cells.map(({ m, w }) => (
-          <span
-            class:list={['dot', g.filled.has(`${m}-${w}`) && 'dot-filled']}
-            data-tl-dot={`${g.year}-${m}-${w}`}
-          />
-        ))}
+  <div id="tl-modules" class="space-y-5">
+    {initial.map((d, i) => (
+      <div class="flex items-start" data-slot={i}>
+        <a
+          data-year
+          href={`/${d.year}`}
+          class="w-9 shrink-0 pt-px text-[14px] tabular-nums text-neutral-400 transition-colors hover:text-neutral-900"
+        >
+          {d.year}
+        </a>
+
+        <div
+          data-dots
+          class={dotsWrap}
+          style="height: 114px; grid-template-rows: repeat(12, 1fr);"
+        >
+          {cells.map(({ m, w }) => (
+            <span
+              class:list={['dot', d.filled.includes(`${m}-${w}`) && 'dot-filled']}
+              data-tl-dot={`${d.year}-${m}-${w}`}
+            />
+          ))}
+        </div>
+
+        <ul data-titles class="min-w-0 flex-1 space-y-2.5">
+          {d.items.map((it) => (
+            <li class="flex items-baseline gap-3">
+              <a href={it.href} class={titleClass} data-tl-link={it.cell}>{it.title}</a>
+              {it.tag && <span class="shrink-0 text-[14px] text-neutral-400">{it.tag}</span>}
+            </li>
+          ))}
+        </ul>
       </div>
+    ))}
+  </div>
 
-      <ul class="min-w-0 flex-1 space-y-2.5">
-        {g.items.map((it) => (
-          <li class="flex items-baseline justify-between gap-4">
-            <a href={it.href} class={linkClass} data-tl-link={it.cell} title={fmtDate(it.date)}>
-              {it.title}
-            </a>
-            {it.tag && <span class="shrink-0 text-[13px] text-neutral-400">{it.tag}</span>}
-          </li>
-        ))}
-      </ul>
-    </div>
-  ))}
+  {/* older (bottom) — aligned to the title column */}
+  <div class="mt-4 flex justify-end pr-2" data-tl-older-wrap>
+    <button type="button" data-tl-older class={ctlClass}>older</button>
+  </div>
 </div>
 
-<style>
+<script type="application/json" id="tl-data" is:inline set:html={JSON.stringify(yearsData)}></script>
+
+<style is:global>
   .dot {
     width: 4px;
     height: 4px;
@@ -98,12 +127,83 @@ const linkClass =
   }
 </style>
 
-<script is:inline>
-  document.querySelectorAll('[data-tl-link]').forEach((link) => {
-    const cell = link.getAttribute('data-tl-link');
-    const dot = document.querySelector(`[data-tl-dot="${cell}"]`);
-    if (!dot) return;
-    link.addEventListener('mouseenter', () => dot.classList.add('dot-active'));
-    link.addEventListener('mouseleave', () => dot.classList.remove('dot-active'));
-  });
+<script>
+  const LINK_CLASS =
+    'min-w-0 flex-1 truncate text-neutral-900 underline decoration-transparent hover:decoration-neutral-300 underline-offset-[3px] transition-colors';
+
+  const dataEl = document.getElementById('tl-data');
+  const modules = document.getElementById('tl-modules');
+  if (dataEl && modules) {
+    const years = JSON.parse(dataEl.textContent || '[]');
+    const rows = [...modules.querySelectorAll('[data-slot]')];
+    const olderBtn = document.querySelector('[data-tl-older]');
+    const newerBtn = document.querySelector('[data-tl-newer]');
+    const olderWrap = document.querySelector('[data-tl-older-wrap]');
+    const newerWrap = document.querySelector('[data-tl-newer-wrap]');
+    const win = rows.length;
+    const maxStart = Math.max(0, years.length - win);
+    let start = 0;
+
+    const CELLS = [];
+    for (let i = 0; i < 12; i++) {
+      const m = 11 - i;
+      for (let w = 0; w < 4; w++) CELLS.push(m + '-' + w);
+    }
+
+    const dotsHTML = (d) =>
+      CELLS.map(
+        (c) => `<span class="dot${d.filled.includes(c) ? ' dot-filled' : ''}" data-tl-dot="${d.year}-${c}"></span>`,
+      ).join('');
+
+    const titlesHTML = (d) =>
+      d.items
+        .map(
+          (it) =>
+            `<li class="flex items-baseline gap-3"><a href="${it.href}" class="${LINK_CLASS}" data-tl-link="${it.cell}">${it.title}</a>${it.tag ? `<span class="shrink-0 text-[14px] text-neutral-400">${it.tag}</span>` : ''}</li>`,
+        )
+        .join('');
+
+    function paint() {
+      rows.forEach((row, i) => {
+        const d = years[start + i];
+        if (!d) return;
+        row.querySelector('[data-dots]').innerHTML = dotsHTML(d);
+        row.querySelector('[data-titles]').innerHTML = titlesHTML(d);
+        const y = row.querySelector('[data-year]');
+        y.setAttribute('href', '/' + d.year);
+        y.textContent = String(d.year);
+      });
+      newerWrap.style.visibility = start <= 0 ? 'hidden' : 'visible';
+      olderWrap.style.visibility = start >= maxStart ? 'hidden' : 'visible';
+    }
+
+    olderBtn?.addEventListener('click', () => {
+      if (start < maxStart) {
+        start++;
+        paint();
+      }
+    });
+    newerBtn?.addEventListener('click', () => {
+      if (start > 0) {
+        start--;
+        paint();
+      }
+    });
+
+    // hover a title -> light its dot (delegated so it survives re-renders)
+    modules.addEventListener('mouseover', (e) => {
+      const link = e.target.closest('[data-tl-link]');
+      if (!link) return;
+      document.querySelector(`[data-tl-dot="${link.dataset.tlLink}"]`)?.classList.add('dot-active');
+    });
+    modules.addEventListener('mouseout', (e) => {
+      const link = e.target.closest('[data-tl-link]');
+      if (!link) return;
+      document.querySelector(`[data-tl-dot="${link.dataset.tlLink}"]`)?.classList.remove('dot-active');
+    });
+
+    // initial control visibility (server rendered start = 0)
+    newerWrap.style.visibility = 'hidden';
+    olderWrap.style.visibility = maxStart > 0 ? 'visible' : 'hidden';
+  }
 </script>

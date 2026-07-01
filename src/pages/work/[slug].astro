@@ -1,6 +1,6 @@
 ---
 import Page from '../../layouts/Page.astro';
-import Back from '../../components/Back.astro';
+import Header from '../../components/Header.astro';
 
 export async function getStaticPaths() {
   const modules = import.meta.glob('../../work/*.mdx', { eager: true });
@@ -17,11 +17,9 @@ const displayUrl = fm.url?.replace(/^https?:\/\//, '').replace(/\/$/, '');
 ---
 
 <Page title={`${fm.title} — Azuolas`} description={fm.summary}>
-  <Back href="/" />
+  <Header section={fm.title} />
 
-  <h1 class="mt-6 text-[14px] font-medium tracking-tight text-neutral-900">{fm.title}</h1>
-
-  <div class="mt-2 space-y-0.5 text-[14px] text-neutral-500">
+  <div class="mt-8 space-y-0.5 text-[14px] text-neutral-500">
     {fm.role && <p>{fm.role}</p>}
     {fm.period && <p class="tabular-nums">{fm.period}</p>}
     {displayUrl && (

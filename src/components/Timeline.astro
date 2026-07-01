@@ -62,11 +62,13 @@ const ctlClass = 'text-[14px] italic text-neutral-400 transition-colors hover:te
 
 <div class="text-[14px]">
   {/* newer (top) — aligned to the title column */}
-  <div class="mb-4 flex justify-end pr-2" data-tl-newer-wrap style="visibility: hidden;">
+  <div class="mb-2 flex justify-end pr-2" data-tl-newer-wrap style="visibility: hidden;">
     <button type="button" data-tl-newer class={ctlClass}>newer</button>
   </div>
 
-  <div id="tl-modules" class="space-y-5">
+  <div class="ml-auto h-px w-1/4 bg-neutral-200"></div>
+
+  <div id="tl-modules" class="space-y-5 py-3">
     {initial.map((d, i) => (
       <div class="flex items-start" data-slot={i}>
         <a
@@ -102,8 +104,10 @@ const ctlClass = 'text-[14px] italic text-neutral-400 transition-colors hover:te
     ))}
   </div>
 
+  <div class="ml-auto h-px w-1/4 bg-neutral-200"></div>
+
   {/* older (bottom) — aligned to the title column */}
-  <div class="mt-4 flex justify-end pr-2" data-tl-older-wrap>
+  <div class="mt-2 flex justify-end pr-2" data-tl-older-wrap>
     <button type="button" data-tl-older class={ctlClass}>older</button>
   </div>
 </div>

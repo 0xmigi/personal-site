@@ -2,9 +2,10 @@
 interface Props {
   year: number;
   dates: string[]; // YYYY-MM-DD strings that should be lit
+  height?: number; // total pixel height — matches the home page bio-top → 2024-bottom rectangle
 }
 
-const { year, dates } = Astro.props;
+const { year, dates, height = 512 } = Astro.props;
 const filled = new Set(dates);
 
 const jan1DOW = new Date(Date.UTC(year, 0, 1)).getUTCDay(); // 0=Sun
@@ -32,27 +33,32 @@ for (const d of days) {
   grid[maxRow - d.row][d.col] = { iso: d.iso, filled: d.filled };
 }
 const flat = grid.flat();
+const numRows = maxRow + 1;
 ---
 
-<div class="grid w-fit grid-cols-[repeat(7,7px)] gap-[3px]">
+{/* mirrors the home timeline dots: 4px round, same greys, rows spread over a fixed height */}
+<div
+  class="grid items-center gap-x-[5px]"
+  style={`height: ${height}px; grid-template-columns: repeat(7, 4px); grid-template-rows: repeat(${numRows}, 1fr);`}
+>
   {flat.map((cell) =>
     cell ? (
-      <span class:list={['hday', cell.filled && 'hday-on']} title={cell.iso} />
+      <span class:list={['ydot', cell.filled && 'ydot-on']} title={cell.iso} />
     ) : (
-      <span class="block h-[7px] w-[7px]" />
+      <span class="block h-1 w-1" />
     ),
   )}
 </div>
 
 <style>
-  .hday {
+  .ydot {
     display: block;
-    width: 7px;
-    height: 7px;
-    border-radius: 2px;
-    background: #ededed;
+    width: 4px;
+    height: 4px;
+    border-radius: 9999px;
+    background: #e5e5e5;
   }
-  .hday-on {
+  .ydot-on {
     background: #404040;
   }
 </style>

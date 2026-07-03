@@ -62,11 +62,40 @@ const ctlClass = 'text-[14px] italic text-neutral-400 transition-colors hover:te
 
 <div class="text-[14px]">
   {/* newer (top) — aligned to the title column */}
-  <div class="mb-2 flex justify-end pr-2" data-tl-newer-wrap style="visibility: hidden;">
+  <div class="relative z-10 mb-2 flex justify-end pr-2" data-tl-newer-wrap style="visibility: hidden;">
     <button type="button" data-tl-newer class={ctlClass}>newer</button>
   </div>
 
-  <div class="ml-auto h-px w-1/4 bg-neutral-200"></div>
+  {/* the agent — a lil goat that lives on the timeline's top line */}
+  <div class="relative ml-auto w-1/4">
+    <div id="goat-walk" aria-hidden="true">
+      <svg id="site-goat" viewBox="0 0 64 48" fill="none">
+      {/* one fixed pen weight (screen px, via non-scaling-stroke) matching the page's hairlines */}
+      <g class="g-tail">
+        <path d="M47.5 18.5 Q52 15 51.5 10.5" stroke="#404040" stroke-width="1.25" vector-effect="non-scaling-stroke" stroke-linecap="round" />
+      </g>
+      <path class="g-l1" d="M26 30 L26 47" stroke="#404040" stroke-width="1.25" vector-effect="non-scaling-stroke" stroke-linecap="round" />
+      <path class="g-l2" d="M32 30 L32 47" stroke="#404040" stroke-width="1.25" vector-effect="non-scaling-stroke" stroke-linecap="round" />
+      <path class="g-l3" d="M40 30 L40 47" stroke="#404040" stroke-width="1.25" vector-effect="non-scaling-stroke" stroke-linecap="round" />
+      <path class="g-l4" d="M46 30 L46 47" stroke="#404040" stroke-width="1.25" vector-effect="non-scaling-stroke" stroke-linecap="round" />
+      <rect class="g-body" x="21" y="15" width="28" height="17" rx="8.5" fill="white" stroke="#404040" stroke-width="1.25" vector-effect="non-scaling-stroke" />
+      <g class="g-head">
+        <path d="M15 9.5 Q13.5 3.5 17.5 2" stroke="#404040" stroke-width="1.25" vector-effect="non-scaling-stroke" stroke-linecap="round" />
+        <path d="M20 9.5 Q20 4 24 3.5" stroke="#404040" stroke-width="1.25" vector-effect="non-scaling-stroke" stroke-linecap="round" />
+        <path class="g-ear" d="M21.5 12.5 Q25.5 13.5 26 17.5" stroke="#404040" stroke-width="1.25" vector-effect="non-scaling-stroke" stroke-linecap="round" />
+        <rect x="7.5" y="9" width="15.5" height="12" rx="5" fill="white" stroke="#404040" stroke-width="1.25" vector-effect="non-scaling-stroke" />
+        <path d="M10 21.5 L9 25.5" stroke="#404040" stroke-width="1.25" vector-effect="non-scaling-stroke" stroke-linecap="round" />
+        <circle class="g-eye" cx="13" cy="14" r="1.6" fill="#171717" />
+      </g>
+      <circle class="g-body" cx="22" cy="24" r="2" fill="#f97316" />
+      <g class="g-zzz" aria-hidden="true">
+        <text x="26" y="6" font-size="8" font-style="italic" fill="#a3a3a3">z</text>
+        <text x="33" y="1" font-size="6" font-style="italic" fill="#c4c4c4">z</text>
+      </g>
+      </svg>
+    </div>
+    <div class="h-px bg-neutral-200"></div>
+  </div>
 
   <div id="tl-modules" class="space-y-5 py-3">
     {initial.map((d, i) => (
@@ -116,11 +145,27 @@ const ctlClass = 'text-[14px] italic text-neutral-400 transition-colors hover:te
 
 <style is:global>
   .dot {
+    position: relative;
     width: 4px;
     height: 4px;
     border-radius: 9999px;
     background: #e5e5e5;
     transition: transform 0.12s ease, background-color 0.12s ease;
+  }
+  .now-ring {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 18px;
+    height: 14px;
+    transform: translate(-50%, -50%) rotate(-6deg);
+    pointer-events: none;
+  }
+  .now-ring path {
+    fill: none;
+    stroke: #f97316;
+    stroke-width: 3.5;
+    stroke-linecap: round;
   }
   .dot-filled {
     background: #404040;
@@ -129,11 +174,570 @@ const ctlClass = 'text-[14px] italic text-neutral-400 transition-colors hover:te
     transform: scale(2.2);
     background: #171717;
   }
+
+  /* the agent goat: #goat-walk owns position + facing, the svg owns gait */
+  #goat-walk {
+    position: absolute;
+    bottom: 1px;
+    left: 15%;
+    width: 34px;
+    cursor: pointer;
+    transform-origin: 50% 100%;
+  }
+  #site-goat {
+    display: block;
+    width: 100%;
+    height: auto;
+    overflow: visible;
+    animation: goat-bob 3.2s ease-in-out infinite;
+  }
+  #site-goat .g-head {
+    transform-box: view-box;
+    transform-origin: 22px 19px;
+    animation: goat-sniff 9s ease-in-out infinite;
+  }
+  #site-goat .g-eye {
+    transform-box: fill-box;
+    transform-origin: center;
+    animation: goat-blink 5s infinite;
+  }
+  #site-goat .g-tail {
+    transform-box: view-box;
+    transform-origin: 47.5px 18.5px;
+    animation: goat-tail 6s ease-in-out infinite;
+  }
+  #site-goat .g-ear {
+    transform-box: view-box;
+    transform-origin: 22px 13px;
+    animation: goat-ear 7s ease-in-out infinite;
+  }
+  /* hovering a timeline entry: he perks up */
+  #goat-walk.goat-alert .g-head {
+    animation: none;
+    transform: rotate(-8deg);
+  }
+  #goat-walk.goat-alert .g-ear {
+    animation: none;
+    transform: rotate(-28deg);
+  }
+  #goat-walk.goat-alert .g-tail {
+    animation: goat-wag 0.3s ease-in-out 4;
+  }
+  /* ...a short burst of excitement: three quick hops, then he settles into
+     an attentive stand (the excitement doesn't last) */
+  #goat-walk.goat-alert #site-goat {
+    animation: goat-excited 0.15s ease-in-out 3;
+  }
+  #goat-walk.goat-alert .g-l1,
+  #goat-walk.goat-alert .g-l2 {
+    animation: goat-excited-front 0.15s ease-in-out 3;
+  }
+  #goat-walk.goat-alert .g-l3,
+  #goat-walk.goat-alert .g-l4 {
+    animation: goat-excited-back 0.15s ease-in-out 3;
+  }
+  /* paging the timeline (or poking him): startled hop — legs tuck mid-air */
+  #goat-walk.goat-hop #site-goat {
+    animation: goat-hop 0.45s cubic-bezier(0.3, 1.6, 0.5, 1);
+  }
+  #goat-walk.goat-hop .g-l1,
+  #goat-walk.goat-hop .g-l2 {
+    animation: goat-hop-front 0.45s ease-out;
+  }
+  #goat-walk.goat-hop .g-l3,
+  #goat-walk.goat-hop .g-l4 {
+    animation: goat-hop-back 0.45s ease-out;
+  }
+  /* walking: diagonal leg pairs swing in alternating phase, body bobs per stride */
+  #site-goat .g-l1 { transform-box: view-box; transform-origin: 26px 30px; }
+  #site-goat .g-l2 { transform-box: view-box; transform-origin: 32px 30px; }
+  #site-goat .g-l3 { transform-box: view-box; transform-origin: 40px 30px; }
+  #site-goat .g-l4 { transform-box: view-box; transform-origin: 46px 30px; }
+  #goat-walk.goat-walking .g-l1,
+  #goat-walk.goat-walking .g-l4 {
+    animation: goat-step 0.4s linear infinite;
+  }
+  #goat-walk.goat-walking .g-l2,
+  #goat-walk.goat-walking .g-l3 {
+    animation: goat-step 0.4s linear infinite;
+    animation-delay: -0.2s;
+  }
+  #goat-walk.goat-walking #site-goat {
+    animation: goat-waddle 0.4s ease-in-out infinite;
+  }
+  /* panicked bolt: same gait, double time */
+  #goat-walk.goat-dash .g-l1,
+  #goat-walk.goat-dash .g-l2,
+  #goat-walk.goat-dash .g-l3,
+  #goat-walk.goat-dash .g-l4 {
+    animation-duration: 0.18s;
+  }
+  #goat-walk.goat-dash #site-goat {
+    animation-duration: 0.18s;
+  }
+  /* turning around: a quick gather-dip; the flip happens at the low point */
+  #goat-walk.goat-turning #site-goat {
+    animation: goat-turn 0.24s ease-in-out;
+  }
+  /* poses settle smoothly — body lowers, legs fold, instead of snapping */
+  #site-goat .g-body,
+  #site-goat .g-tail,
+  #site-goat .g-head,
+  #site-goat .g-l1,
+  #site-goat .g-l2,
+  #site-goat .g-l3,
+  #site-goat .g-l4 {
+    transform-box: view-box;
+    transition: transform 0.4s ease;
+  }
+  /* stage 1 — lying down: body rests on the line, legs folded, head still up */
+  #goat-walk.goat-lying .g-body {
+    animation: goat-breathe 2.6s ease-in-out infinite;
+    transform: translateY(13px);
+  }
+  #goat-walk.goat-lying .g-head {
+    animation: none;
+    transform: translateY(13px);
+  }
+  #goat-walk.goat-lying .g-tail {
+    animation: none;
+    transform: translateY(13px) rotate(-20deg);
+  }
+  #goat-walk.goat-lying .g-l1,
+  #goat-walk.goat-lying .g-l2 {
+    animation: none;
+    transform: translateY(13px) rotate(-75deg);
+  }
+  #goat-walk.goat-lying .g-l3,
+  #goat-walk.goat-lying .g-l4 {
+    animation: none;
+    transform: translateY(13px) rotate(75deg);
+  }
+  #goat-walk.goat-lying .g-ear {
+    animation: none;
+  }
+  /* stage 2 — asleep: the head sinks low, chin coming to rest by his legs */
+  #goat-walk.goat-sleeping .g-head {
+    transition: transform 0.9s ease-in-out;
+    transform: translate(-4px, 21px) rotate(-6deg);
+  }
+  #goat-walk.goat-sleeping .g-eye {
+    animation: none;
+    transform: scaleY(0.12);
+  }
+  #site-goat .g-zzz {
+    opacity: 0;
+    transform-box: view-box;
+    transform-origin: 30px 6px;
+  }
+  #goat-walk.goat-sleeping .g-zzz {
+    animation: goat-zzz 2.6s ease-in-out infinite;
+  }
+  @keyframes goat-bob {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-0.7px); }
+  }
+  @keyframes goat-sniff {
+    0%, 55%, 86%, 100% { transform: rotate(0deg); }
+    62%, 66%, 70% { transform: rotate(26deg); }
+    64%, 68% { transform: rotate(21deg); }
+    76% { transform: rotate(23deg); }
+  }
+  @keyframes goat-blink {
+    0%, 90%, 100% { transform: scaleY(1); }
+    93%, 95% { transform: scaleY(0.15); }
+  }
+  @keyframes goat-tail {
+    0%, 60%, 100% { transform: rotate(0deg); }
+    66%, 74% { transform: rotate(-18deg); }
+    70%, 78% { transform: rotate(8deg); }
+  }
+  @keyframes goat-ear {
+    0%, 40%, 48%, 100% { transform: rotate(0deg); }
+    43% { transform: rotate(-24deg); }
+    46% { transform: rotate(10deg); }
+  }
+  @keyframes goat-hop {
+    0% { transform: translateY(0); }
+    35% { transform: translateY(-9px) rotate(-4deg); }
+    100% { transform: translateY(0); }
+  }
+  @keyframes goat-excited {
+    0%, 100% { transform: translateY(0); }
+    30% { transform: translateY(-2px) rotate(-1deg); }
+    55% { transform: translateY(0); }
+  }
+  @keyframes goat-excited-front {
+    0%, 60%, 100% { transform: rotate(0deg); }
+    30% { transform: rotate(-12deg); }
+  }
+  @keyframes goat-excited-back {
+    0%, 60%, 100% { transform: rotate(0deg); }
+    30% { transform: rotate(11deg); }
+  }
+  @keyframes goat-wag {
+    0%, 100% { transform: rotate(-26deg); }
+    50% { transform: rotate(4deg); }
+  }
+  @keyframes goat-hop-front {
+    0%, 100% { transform: rotate(0deg); }
+    30%, 55% { transform: rotate(-34deg); }
+    80% { transform: rotate(8deg); }
+  }
+  @keyframes goat-hop-back {
+    0%, 100% { transform: rotate(0deg); }
+    30%, 55% { transform: rotate(32deg); }
+    80% { transform: rotate(-6deg); }
+  }
+  @keyframes goat-waddle {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-1px); }
+  }
+  @keyframes goat-step {
+    0%, 100% { transform: rotate(11deg); }
+    50% { transform: rotate(-11deg); }
+  }
+  @keyframes goat-turn {
+    0%, 100% { transform: translateY(0); }
+    45% { transform: translateY(-2.5px); } /* a little pivot-hop, never below ground */
+  }
+  @keyframes goat-breathe {
+    0%, 100% { transform: translateY(13px); }
+    50% { transform: translateY(12.3px); }
+  }
+  @keyframes goat-zzz {
+    0%, 20% { opacity: 0; transform: translateY(10px); }
+    50%, 75% { opacity: 1; }
+    100% { opacity: 0; transform: translateY(5px); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    #goat-walk,
+    #goat-walk * {
+      animation: none !important;
+      transition: none !important;
+    }
+  }
 </style>
 
 <script>
   const LINK_CLASS =
     'min-w-0 flex-1 truncate text-neutral-900 underline decoration-transparent hover:decoration-neutral-300 underline-offset-[3px] transition-colors';
+
+  // hand-drawn ring marking the current week — computed client-side so it
+  // stays current without a rebuild
+  const NOW_RING =
+    '<svg class="now-ring" viewBox="0 0 40 32" aria-hidden="true"><path d="M20.2 3.1C30.5 1.8 37.8 8.2 37.2 16.1 36.6 24.6 28.4 29.6 19.1 29.2 10.2 28.8 2.6 24 2.9 15.6 3.2 7.4 11.5 3.9 22.8 4.4"/></svg>';
+
+  function markNow() {
+    document.querySelectorAll('.now-ring').forEach((el) => el.remove());
+    const t = new Date();
+    const key = `${t.getFullYear()}-${t.getMonth()}-${Math.min(3, Math.floor((t.getDate() - 1) / 7))}`;
+    document.querySelector(`[data-tl-dot="${key}"]`)?.insertAdjacentHTML('beforeend', NOW_RING);
+  }
+
+  // the agent goat: wanders his line, watches the cursor, treats the "newer"
+  // sign as a solid object, and gets braver about it the longer you're around
+  const walk = document.getElementById('goat-walk');
+  if (walk && !matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    const yard = walk.parentElement!; // the stub-line wrapper = his territory
+    let x = yard.offsetWidth * 0.15;
+    let facing = -1; // -1 = left (as drawn), 1 = right
+    let isWalking = false;
+    let isAlert = false;
+    let isSleeping = false;
+    let onArrive: (() => void) | null = null;
+
+    // how many times he's been startled — persisted, so he stays brave
+    let startles = 0;
+    try {
+      startles = Number(localStorage.getItem('goat-startles')) || 0;
+    } catch {}
+    const rememberStartle = () => {
+      startles++;
+      try {
+        localStorage.setItem('goat-startles', String(startles));
+      } catch {}
+    };
+    const COMFORT = 4; // startles until the sign stops scaring him
+
+    // his pen is the stub line, minus the "newer" sign's space when visible —
+    // the sign shrinks his world and he can never be inside it
+    const signX = () => {
+      const wrap = document.querySelector('[data-tl-newer-wrap]');
+      if (!wrap || getComputedStyle(wrap).visibility === 'hidden') return Infinity;
+      const btn = wrap.querySelector('button');
+      return (btn || wrap).getBoundingClientRect().left - yard.getBoundingClientRect().left;
+    };
+    const maxX = () => {
+      const open = Math.max(0, yard.offsetWidth - walk.offsetWidth);
+      return Math.min(open, Math.max(0, signX() - walk.offsetWidth - 4));
+    };
+    const clamp = (v: number) => Math.min(maxX(), Math.max(0, v));
+
+    const place = () => {
+      walk.style.left = `${x}px`;
+    };
+    const applyFacing = () => {
+      walk.style.transform = facing === 1 ? 'scaleX(-1)' : '';
+    };
+    // animated turn = a quick gather-dip with the flip at its low point;
+    // instant is for moments already masked by a hop
+    let turnFlipT = 0;
+    let turnEndT = 0;
+    const setFacing = (f: number, animated = false) => {
+      if (f === facing) return;
+      facing = f;
+      if (!animated) {
+        applyFacing();
+        return;
+      }
+      walk.classList.add('goat-turning');
+      clearTimeout(turnFlipT);
+      clearTimeout(turnEndT);
+      turnFlipT = setTimeout(applyFacing, 110);
+      turnEndT = setTimeout(() => walk.classList.remove('goat-turning'), 240);
+    };
+    place();
+
+    const stopWalk = () => {
+      onArrive = null;
+      clearTimeout(walkT);
+      if (!isWalking) return;
+      x = parseFloat(getComputedStyle(walk).left); // freeze where he stands
+      walk.style.transition = 'none';
+      place();
+      isWalking = false;
+      walk.classList.remove('goat-walking', 'goat-dash');
+    };
+
+    // walks complete via transitionend OR a fallback timer — throttled tabs
+    // (background, occluded) don't fire transition events reliably, and the
+    // state machine must never wedge on a missing event
+    let walkT = 0;
+    const finishWalk = () => {
+      clearTimeout(walkT);
+      if (!isWalking) return;
+      isWalking = false;
+      walk.classList.remove('goat-walking', 'goat-dash');
+      const cb = onArrive;
+      onArrive = null;
+      if (cb) cb();
+    };
+    // returns true if he actually set off
+    const walkTo = (target: number, speed = 18) => {
+      target = clamp(target); // every destination obeys the world's bounds
+      // if he's mid-walk, measure from where he actually is, not the old target
+      if (isWalking) x = parseFloat(getComputedStyle(walk).left) || x;
+      const dist = Math.abs(target - x);
+      if (dist < 6) return false;
+      setFacing(target > x ? 1 : -1, true);
+      isWalking = true;
+      walk.classList.add('goat-walking');
+      const dur = Math.round((dist / speed) * 1000);
+      walk.style.transition = `left ${dur}ms linear`;
+      x = target;
+      place();
+      clearTimeout(walkT);
+      walkT = setTimeout(finishWalk, dur + 250);
+      return true;
+    };
+    walk.addEventListener('transitionend', (e) => {
+      if (e.propertyName === 'left') finishWalk();
+    });
+
+    const hop = () => {
+      walk.classList.remove('goat-hop');
+      void walk.getBoundingClientRect(); // restart the animation
+      walk.classList.add('goat-hop');
+    };
+    walk.addEventListener('animationend', (e) => {
+      if (e.animationName === 'goat-hop') walk.classList.remove('goat-hop');
+    });
+
+    // lying down is two stages: fold down with the head still up, look around
+    // for a bit, then let the head sink to the ground and drift off
+    let settleT = 0;
+    const settle = () => {
+      isWalking = false;
+      walk.classList.remove('goat-walking', 'goat-dash');
+      setFacing(-1, true); // turns around before lying down, like a proper animal
+      isSleeping = true;
+      walk.classList.add('goat-lying');
+      clearTimeout(settleT);
+      settleT = setTimeout(() => {
+        if (isSleeping) walk.classList.add('goat-sleeping');
+      }, 1600 + Math.random() * 1400);
+    };
+    // once comfortable, he'll pick a spot and nap
+    const goSleep = () => {
+      if (isSleeping) return;
+      onArrive = settle;
+      if (!walkTo(Math.random() * maxX(), 14)) {
+        onArrive = null;
+        settle();
+      }
+    };
+    const wakeUp = () => {
+      if (!isSleeping) return;
+      clearTimeout(settleT);
+      isSleeping = false;
+      walk.classList.remove('goat-sleeping', 'goat-lying');
+    };
+
+    // hard pen rule: if the sign's space contains him — or his destination —
+    // he leaps out of the way to the left. Returns true if he had to move.
+    let evacUntil = 0;
+    const enforcePen = () => {
+      if (!yard.offsetWidth) return false; // world not laid out (hidden tab) — no verdicts
+      const now = performance.now();
+      if (now < evacUntil) return true; // already mid-evacuation
+      const limit = maxX();
+      const cur = isWalking ? parseFloat(getComputedStyle(walk).left) || x : x;
+      if (cur <= limit + 0.5 && x <= limit + 0.5) return false;
+      evacUntil = now + 600;
+      wakeUp();
+      stopWalk(); // lands x on the spot he's actually standing
+      hop();
+      setFacing(-1);
+      isWalking = true;
+      walk.classList.add('goat-walking', 'goat-dash');
+      walk.style.transition = 'left 400ms cubic-bezier(0.2, 0.8, 0.4, 1)';
+      x = Math.max(0, limit - 6 - Math.random() * 18);
+      place();
+      clearTimeout(walkT);
+      walkT = setTimeout(finishWalk, 700);
+      return true;
+    };
+
+    // wander somewhere new every so often — or, once he's comfortable and the
+    // sign is out, go nap under it
+    // a fresh visitor is exciting: for the first stretch of a visit he roams
+    // briskly and never naps; only once they linger does he get lazy
+    const bornAt = performance.now();
+    const EXCITED_MS = 50000;
+    const excited = () => performance.now() - bornAt < EXCITED_MS;
+    (function idleTick() {
+      setTimeout(() => {
+        if (!isAlert && !isWalking && !isSleeping && !document.hidden) {
+          if (!excited() && startles >= COMFORT && Math.random() < 0.3) goSleep();
+          else walkTo(Math.random() * maxX());
+        }
+        idleTick();
+      }, excited() ? 2000 + Math.random() * 3000 : 3500 + Math.random() * 5500);
+    })();
+
+    // startles escalate his courage: panic -> spook -> a bored glance
+    const startle = () => {
+      const wasAsleep = isSleeping;
+      rememberStartle();
+      if (wasAsleep) {
+        // rudely awoken: hop up and grumble a few steps into the open
+        wakeUp();
+        stopWalk();
+        hop();
+        x = clamp(x - 22);
+        walk.style.transition = 'left 350ms ease-out';
+        place();
+        return;
+      }
+      stopWalk();
+      if (startles <= 1) {
+        // first time: full panic — hop, spin, bolt to the far end
+        hop();
+        setFacing(-1);
+        isWalking = true;
+        walk.classList.add('goat-walking', 'goat-dash');
+        walk.style.transition = 'left 500ms cubic-bezier(0.2, 0.8, 0.4, 1)';
+        x = 2;
+        place();
+        clearTimeout(walkT);
+        walkT = setTimeout(finishWalk, 800);
+      } else if (startles <= COMFORT - 1) {
+        // wary now, not terrified: hop, turn around, scoot off
+        hop();
+        setFacing(-facing);
+        x = clamp(x + facing * 14);
+        walk.style.transition = 'left 300ms ease-out';
+        place();
+      } else {
+        // seen it all before: glance over, maybe a token half-hearted hop
+        setFacing(1, true);
+        if (Math.random() < 0.3) hop();
+      }
+    };
+    walk.addEventListener('click', startle); // poking him counts too
+    document.addEventListener('click', (e) => {
+      const t = e.target instanceof Element ? e.target : null;
+      if (!t?.closest('[data-tl-older],[data-tl-newer]')) return;
+      if (enforcePen()) return; // leaping clear IS the reaction
+      startle();
+    });
+
+    // the pen rule is watched three ways so it can't leak: instantly when the
+    // sign's visibility flips, on paging clicks, and by a steady watchdog
+    const signWrap = document.querySelector('[data-tl-newer-wrap]');
+    if (signWrap) {
+      new MutationObserver(() => enforcePen()).observe(signWrap, {
+        attributes: true,
+        attributeFilter: ['style'],
+      });
+    }
+    setInterval(enforcePen, 600);
+
+    // layout changed under him (window resize / tab became visible):
+    // snap back inside the pen
+    const snapInBounds = () => {
+      if (!yard.offsetWidth) return;
+      stopWalk();
+      walk.style.transition = 'none';
+      x = clamp(x);
+      place();
+    };
+    window.addEventListener('resize', snapInBounds);
+    document.addEventListener('visibilitychange', () => {
+      if (!document.hidden) snapInBounds();
+    });
+
+    // hovering an entry or year: full attention — unless he's asleep.
+    // debounced so sweeping the cursor across titles doesn't make him flicker
+    let alertT = 0;
+    document.addEventListener('mouseover', (e) => {
+      const t = e.target instanceof Element ? e.target : null;
+      if (t?.closest('[data-tl-link],[data-year]') && !isSleeping) {
+        clearTimeout(alertT);
+        if (!isAlert) {
+          isAlert = true;
+          stopWalk();
+          setFacing(-1, true); // turns toward the timeline
+          walk.classList.add('goat-alert');
+        }
+      }
+    });
+    document.addEventListener('mouseout', (e) => {
+      const t = e.target instanceof Element ? e.target : null;
+      if (t?.closest('[data-tl-link],[data-year]') && isAlert) {
+        clearTimeout(alertT);
+        alertT = setTimeout(() => {
+          isAlert = false;
+          walk.classList.remove('goat-alert');
+        }, 350);
+      }
+    });
+
+    // debug/play handle (also lets you reset his nerves from the console)
+    (window as any).__goat = {
+      startle,
+      goSleep,
+      walkTo,
+      reset: () => {
+        startles = 0;
+        try {
+          localStorage.removeItem('goat-startles');
+        } catch {}
+        wakeUp();
+      },
+    };
+  }
 
   const dataEl = document.getElementById('tl-data');
   const modules = document.getElementById('tl-modules');
@@ -179,6 +783,7 @@ const ctlClass = 'text-[14px] italic text-neutral-400 transition-colors hover:te
       });
       newerWrap.style.visibility = start <= 0 ? 'hidden' : 'visible';
       olderWrap.style.visibility = start >= maxStart ? 'hidden' : 'visible';
+      markNow();
     }
 
     olderBtn?.addEventListener('click', () => {
@@ -209,5 +814,6 @@ const ctlClass = 'text-[14px] italic text-neutral-400 transition-colors hover:te
     // initial control visibility (server rendered start = 0)
     newerWrap.style.visibility = 'hidden';
     olderWrap.style.visibility = maxStart > 0 ? 'visible' : 'hidden';
+    markNow();
   }
 </script>

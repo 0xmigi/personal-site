@@ -52,6 +52,7 @@ const numRows = maxRow + 1;
 
 <style>
   .ydot {
+    position: relative;
     display: block;
     width: 4px;
     height: 4px;
@@ -62,3 +63,36 @@ const numRows = maxRow + 1;
     background: #404040;
   }
 </style>
+
+{/* global: the ring is injected client-side, so scoped styles wouldn't reach it */}
+<style is:global>
+  .now-ring {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 18px;
+    height: 14px;
+    transform: translate(-50%, -50%) rotate(-6deg);
+    pointer-events: none;
+  }
+  .now-ring path {
+    fill: none;
+    stroke: #f97316;
+    stroke-width: 3.5;
+    stroke-linecap: round;
+  }
+</style>
+
+<script>
+  // hand-drawn ring on today's dot — computed in the browser so the static
+  // page never needs a rebuild; no-op on past years' pages
+  const pad = (n: number) => String(n).padStart(2, '0');
+  const t = new Date();
+  const iso = `${t.getFullYear()}-${pad(t.getMonth() + 1)}-${pad(t.getDate())}`;
+  document
+    .querySelector(`.ydot[title="${iso}"]`)
+    ?.insertAdjacentHTML(
+      'beforeend',
+      '<svg class="now-ring" viewBox="0 0 40 32" aria-hidden="true"><path d="M20.2 3.1C30.5 1.8 37.8 8.2 37.2 16.1 36.6 24.6 28.4 29.6 19.1 29.2 10.2 28.8 2.6 24 2.9 15.6 3.2 7.4 11.5 3.9 22.8 4.4"/></svg>',
+    );
+</script>

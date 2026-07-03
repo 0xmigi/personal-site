@@ -6,6 +6,7 @@ export interface TimelineItem {
   href: string;
   date: string;
   tag?: string;
+  type: string;
 }
 
 interface Props {
@@ -38,14 +39,13 @@ for (const it of sorted) {
   g.items.push({ ...it, cell: `${y}-${m}-${w}` });
 }
 
+// all items ship to the client (typed) so the filters can re-derive dots +
+// titles per type; the server render below is the unfiltered view
 const yearsData = groups.map((g) => ({
   year: g.year,
   filled: [...g.filled],
-  items: g.items.slice(0, 4).map((it) => ({ title: it.title, href: it.href, tag: it.tag ?? '', cell: it.cell })),
+  items: g.items.map((it) => ({ title: it.title, href: it.href, cell: it.cell, type: it.type })),
 }));
-
-const WINDOW = Math.min(3, yearsData.length);
-const initial = yearsData.slice(0, WINDOW);
 
 // 12 months (rows, December at top) x 4 weeks (cols)
 const cells = Array.from({ length: 12 }, (_, i) => {
@@ -56,18 +56,14 @@ const cells = Array.from({ length: 12 }, (_, i) => {
 const linkClass =
   'text-neutral-900 underline decoration-transparent hover:decoration-neutral-300 underline-offset-[3px] transition-colors';
 const titleClass = `min-w-0 flex-1 truncate ${linkClass}`;
-const dotsWrap = 'ml-3 mr-4 grid shrink-0 grid-cols-[repeat(4,4px)] items-center gap-x-[5px]';
-const ctlClass = 'text-[14px] italic text-neutral-400 transition-colors hover:text-neutral-900';
+// mt nudges the first dot row down to the year numerals' cap height so the
+// grid doesn't poke above its own year label
+const dotsWrap = 'ml-3 mr-4 mt-[2px] grid shrink-0 grid-cols-[repeat(4,4px)] items-center gap-x-[5px]';
 ---
 
-<div class="text-[14px]">
-  {/* newer (top) — aligned to the title column */}
-  <div class="relative z-10 mb-2 flex justify-end pr-2" data-tl-newer-wrap style="visibility: hidden;">
-    <button type="button" data-tl-newer class={ctlClass}>newer</button>
-  </div>
-
+<div class="flex h-full min-h-0 flex-col text-[14px]">
   {/* the agent — a lil goat that lives on the timeline's top line */}
-  <div class="relative ml-auto w-1/4">
+  <div class="relative ml-auto w-1/4 shrink-0">
     <div id="goat-walk" aria-hidden="true">
       <svg id="site-goat" viewBox="0 0 64 48" fill="none">
       {/* one fixed pen weight (screen px, via non-scaling-stroke) matching the page's hairlines */}
@@ -97,9 +93,14 @@ const ctlClass = 'text-[14px] italic text-neutral-400 transition-colors hover:te
     <div class="h-px bg-neutral-200"></div>
   </div>
 
-  <div id="tl-modules" class="space-y-5 py-3">
-    {initial.map((d, i) => (
-      <div class="flex items-start" data-slot={i}>
+  {/* every year, in one scroller — the page never scrolls, this does */}
+  {/* the window shows ~2.5 year modules (114px module + 20px gap), so the
+     default view fits any phone; shrinks further on very short screens */}
+  {/* flex gap (not space-y) so hidden, filtered-out years leave no phantom margin;
+     max-h = 12px top gap + 2.5 year modules; py matches the bottom line's gap */}
+  <div id="tl-modules" class="flex min-h-0 max-h-[336px] flex-col gap-5 overflow-y-auto overscroll-contain py-3">
+    {yearsData.map((d) => (
+      <div class="flex items-start" data-row={d.year}>
         <a
           data-year
           href={`/${d.year}`}
@@ -121,11 +122,11 @@ const ctlClass = 'text-[14px] italic text-neutral-400 transition-colors hover:te
           ))}
         </div>
 
+        {/* titles only — tags + exact dates live on the year pages */}
         <ul data-titles class="min-w-0 flex-1 space-y-2.5">
-          {d.items.map((it) => (
-            <li class="flex items-baseline gap-3">
+          {d.items.slice(0, 4).map((it) => (
+            <li class="flex items-baseline">
               <a href={it.href} class={titleClass} data-tl-link={it.cell}>{it.title}</a>
-              {it.tag && <span class="shrink-0 text-[14px] text-neutral-400">{it.tag}</span>}
             </li>
           ))}
         </ul>
@@ -133,17 +134,20 @@ const ctlClass = 'text-[14px] italic text-neutral-400 transition-colors hover:te
     ))}
   </div>
 
-  <div class="ml-auto h-px w-1/4 bg-neutral-200"></div>
-
-  {/* older (bottom) — aligned to the title column */}
-  <div class="mt-2 flex justify-end pr-2" data-tl-older-wrap>
-    <button type="button" data-tl-older class={ctlClass}>older</button>
-  </div>
+  <div class="ml-auto h-px w-1/4 shrink-0 bg-neutral-200"></div>
 </div>
 
 <script type="application/json" id="tl-data" is:inline set:html={JSON.stringify(yearsData)}></script>
 
 <style is:global>
+  /* the scroller keeps the page's bare look — no scrollbar; the bottom line
+     and a mid-module cut are the affordance */
+  #tl-modules {
+    scrollbar-width: none;
+  }
+  #tl-modules::-webkit-scrollbar {
+    display: none;
+  }
   .dot {
     position: relative;
     width: 4px;
@@ -236,7 +240,7 @@ const ctlClass = 'text-[14px] italic text-neutral-400 transition-colors hover:te
   #goat-walk.goat-alert .g-l4 {
     animation: goat-excited-back 0.15s ease-in-out 3;
   }
-  /* paging the timeline (or poking him): startled hop — legs tuck mid-air */
+  /* poking him: startled hop — legs tuck mid-air */
   #goat-walk.goat-hop #site-goat {
     animation: goat-hop 0.45s cubic-bezier(0.3, 1.6, 0.5, 1);
   }
@@ -420,9 +424,6 @@ const ctlClass = 'text-[14px] italic text-neutral-400 transition-colors hover:te
 </style>
 
 <script>
-  const LINK_CLASS =
-    'min-w-0 flex-1 truncate text-neutral-900 underline decoration-transparent hover:decoration-neutral-300 underline-offset-[3px] transition-colors';
-
   // hand-drawn ring marking the current week — computed client-side so it
   // stays current without a rebuild
   const NOW_RING =
@@ -435,8 +436,8 @@ const ctlClass = 'text-[14px] italic text-neutral-400 transition-colors hover:te
     document.querySelector(`[data-tl-dot="${key}"]`)?.insertAdjacentHTML('beforeend', NOW_RING);
   }
 
-  // the agent goat: wanders his line, watches the cursor, treats the "newer"
-  // sign as a solid object, and gets braver about it the longer you're around
+  // the agent goat: wanders his line, watches the cursor, and gets braver
+  // about you the longer you're around
   const walk = document.getElementById('goat-walk');
   if (walk && !matchMedia('(prefers-reduced-motion: reduce)').matches) {
     const yard = walk.parentElement!; // the stub-line wrapper = his territory
@@ -458,20 +459,9 @@ const ctlClass = 'text-[14px] italic text-neutral-400 transition-colors hover:te
         localStorage.setItem('goat-startles', String(startles));
       } catch {}
     };
-    const COMFORT = 4; // startles until the sign stops scaring him
+    const COMFORT = 4; // startles until visitors stop scaring him
 
-    // his pen is the stub line, minus the "newer" sign's space when visible —
-    // the sign shrinks his world and he can never be inside it
-    const signX = () => {
-      const wrap = document.querySelector('[data-tl-newer-wrap]');
-      if (!wrap || getComputedStyle(wrap).visibility === 'hidden') return Infinity;
-      const btn = wrap.querySelector('button');
-      return (btn || wrap).getBoundingClientRect().left - yard.getBoundingClientRect().left;
-    };
-    const maxX = () => {
-      const open = Math.max(0, yard.offsetWidth - walk.offsetWidth);
-      return Math.min(open, Math.max(0, signX() - walk.offsetWidth - 4));
-    };
+    const maxX = () => Math.max(0, yard.offsetWidth - walk.offsetWidth);
     const clamp = (v: number) => Math.min(maxX(), Math.max(0, v));
 
     const place = () => {
@@ -584,33 +574,7 @@ const ctlClass = 'text-[14px] italic text-neutral-400 transition-colors hover:te
       walk.classList.remove('goat-sleeping', 'goat-lying');
     };
 
-    // hard pen rule: if the sign's space contains him — or his destination —
-    // he leaps out of the way to the left. Returns true if he had to move.
-    let evacUntil = 0;
-    const enforcePen = () => {
-      if (!yard.offsetWidth) return false; // world not laid out (hidden tab) — no verdicts
-      const now = performance.now();
-      if (now < evacUntil) return true; // already mid-evacuation
-      const limit = maxX();
-      const cur = isWalking ? parseFloat(getComputedStyle(walk).left) || x : x;
-      if (cur <= limit + 0.5 && x <= limit + 0.5) return false;
-      evacUntil = now + 600;
-      wakeUp();
-      stopWalk(); // lands x on the spot he's actually standing
-      hop();
-      setFacing(-1);
-      isWalking = true;
-      walk.classList.add('goat-walking', 'goat-dash');
-      walk.style.transition = 'left 400ms cubic-bezier(0.2, 0.8, 0.4, 1)';
-      x = Math.max(0, limit - 6 - Math.random() * 18);
-      place();
-      clearTimeout(walkT);
-      walkT = setTimeout(finishWalk, 700);
-      return true;
-    };
-
-    // wander somewhere new every so often — or, once he's comfortable and the
-    // sign is out, go nap under it
+    // wander somewhere new every so often — or, once he's comfortable, nap.
     // a fresh visitor is exciting: for the first stretch of a visit he roams
     // briskly and never naps; only once they linger does he get lazy
     const bornAt = performance.now();
@@ -665,24 +629,7 @@ const ctlClass = 'text-[14px] italic text-neutral-400 transition-colors hover:te
         if (Math.random() < 0.3) hop();
       }
     };
-    walk.addEventListener('click', startle); // poking him counts too
-    document.addEventListener('click', (e) => {
-      const t = e.target instanceof Element ? e.target : null;
-      if (!t?.closest('[data-tl-older],[data-tl-newer]')) return;
-      if (enforcePen()) return; // leaping clear IS the reaction
-      startle();
-    });
-
-    // the pen rule is watched three ways so it can't leak: instantly when the
-    // sign's visibility flips, on paging clicks, and by a steady watchdog
-    const signWrap = document.querySelector('[data-tl-newer-wrap]');
-    if (signWrap) {
-      new MutationObserver(() => enforcePen()).observe(signWrap, {
-        attributes: true,
-        attributeFilter: ['style'],
-      });
-    }
-    setInterval(enforcePen, 600);
+    walk.addEventListener('click', startle); // poking him counts
 
     // layout changed under him (window resize / tab became visible):
     // snap back inside the pen
@@ -739,81 +686,77 @@ const ctlClass = 'text-[14px] italic text-neutral-400 transition-colors hover:te
     };
   }
 
-  const dataEl = document.getElementById('tl-data');
   const modules = document.getElementById('tl-modules');
-  if (dataEl && modules) {
-    const years = JSON.parse(dataEl.textContent || '[]');
-    const rows = [...modules.querySelectorAll('[data-slot]')];
-    const olderBtn = document.querySelector('[data-tl-older]');
-    const newerBtn = document.querySelector('[data-tl-newer]');
-    const olderWrap = document.querySelector('[data-tl-older-wrap]');
-    const newerWrap = document.querySelector('[data-tl-newer-wrap]');
-    const win = rows.length;
-    const maxStart = Math.max(0, years.length - win);
-    let start = 0;
-
-    const CELLS = [];
-    for (let i = 0; i < 12; i++) {
-      const m = 11 - i;
-      for (let w = 0; w < 4; w++) CELLS.push(m + '-' + w);
-    }
-
-    const dotsHTML = (d) =>
-      CELLS.map(
-        (c) => `<span class="dot${d.filled.includes(c) ? ' dot-filled' : ''}" data-tl-dot="${d.year}-${c}"></span>`,
-      ).join('');
-
-    const titlesHTML = (d) =>
-      d.items
-        .map(
-          (it) =>
-            `<li class="flex items-baseline gap-3"><a href="${it.href}" class="${LINK_CLASS}" data-tl-link="${it.cell}">${it.title}</a>${it.tag ? `<span class="shrink-0 text-[14px] text-neutral-400">${it.tag}</span>` : ''}</li>`,
-        )
-        .join('');
-
-    function paint() {
-      rows.forEach((row, i) => {
-        const d = years[start + i];
-        if (!d) return;
-        row.querySelector('[data-dots]').innerHTML = dotsHTML(d);
-        row.querySelector('[data-titles]').innerHTML = titlesHTML(d);
-        const y = row.querySelector('[data-year]');
-        y.setAttribute('href', '/' + d.year);
-        y.textContent = String(d.year);
-      });
-      newerWrap.style.visibility = start <= 0 ? 'hidden' : 'visible';
-      olderWrap.style.visibility = start >= maxStart ? 'hidden' : 'visible';
-      markNow();
-    }
-
-    olderBtn?.addEventListener('click', () => {
-      if (start < maxStart) {
-        start++;
-        paint();
-      }
-    });
-    newerBtn?.addEventListener('click', () => {
-      if (start > 0) {
-        start--;
-        paint();
-      }
-    });
-
-    // hover a title -> light its dot (delegated so it survives re-renders)
+  const dataEl = document.getElementById('tl-data');
+  if (modules && dataEl) {
+    // hover a title -> light its dot
     modules.addEventListener('mouseover', (e) => {
-      const link = e.target.closest('[data-tl-link]');
+      const link = (e.target as Element).closest('[data-tl-link]') as HTMLElement | null;
       if (!link) return;
       document.querySelector(`[data-tl-dot="${link.dataset.tlLink}"]`)?.classList.add('dot-active');
     });
     modules.addEventListener('mouseout', (e) => {
-      const link = e.target.closest('[data-tl-link]');
+      const link = (e.target as Element).closest('[data-tl-link]') as HTMLElement | null;
       if (!link) return;
       document.querySelector(`[data-tl-dot="${link.dataset.tlLink}"]`)?.classList.remove('dot-active');
     });
-
-    // initial control visibility (server rendered start = 0)
-    newerWrap.style.visibility = 'hidden';
-    olderWrap.style.visibility = maxStart > 0 ? 'visible' : 'hidden';
     markNow();
+
+    // the filter words (they live in the bio sentence): pick one type, the
+    // dots + titles re-derive from it; click the active word again to go
+    // back to everything
+    type TlItem = { title: string; href: string; cell: string; type: string };
+    type TlYear = { year: number; items: TlItem[] };
+    const YEARS: TlYear[] = JSON.parse(dataEl.textContent || '[]');
+
+    const LINK_CLASS =
+      'min-w-0 flex-1 truncate text-neutral-900 underline decoration-transparent hover:decoration-neutral-300 underline-offset-[3px] transition-colors';
+    // idle = the bio's regular link look; active = the site's orange accent
+    const BTN_IDLE =
+      'text-neutral-900 underline decoration-neutral-300 decoration-1 underline-offset-[3px] hover:decoration-neutral-900 transition-colors';
+    const BTN_ACTIVE =
+      'text-neutral-900 underline decoration-[#f97316] decoration-2 underline-offset-[3px] transition-colors';
+
+    const CELLS: string[] = [];
+    for (let i = 0; i < 12; i++) {
+      const m = 11 - i;
+      for (let w = 0; w < 4; w++) CELLS.push(`${m}-${w}`);
+    }
+
+    const buttons = [...document.querySelectorAll('[data-filter]')] as HTMLElement[];
+    let active: string | null = null;
+
+    const apply = () => {
+      buttons.forEach((b) => {
+        b.className = b.dataset.filter === active ? BTN_ACTIVE : BTN_IDLE;
+      });
+      for (const d of YEARS) {
+        const row = modules.querySelector(`[data-row="${d.year}"]`) as HTMLElement | null;
+        if (!row) continue;
+        const items = active ? d.items.filter((it) => it.type === active) : d.items;
+        row.style.display = items.length ? '' : 'none';
+        const filled = new Set(items.map((it) => it.cell));
+        row.querySelector('[data-dots]')!.innerHTML = CELLS.map(
+          (c) => `<span class="dot${filled.has(`${d.year}-${c}`) ? ' dot-filled' : ''}" data-tl-dot="${d.year}-${c}"></span>`,
+        ).join('');
+        row.querySelector('[data-titles]')!.innerHTML = items
+          .slice(0, 4)
+          .map(
+            (it) =>
+              `<li class="flex items-baseline"><a href="${it.href}" class="${LINK_CLASS}" data-tl-link="${it.cell}">${it.title}</a></li>`,
+          )
+          .join('');
+      }
+      markNow();
+    };
+
+    buttons.forEach((b) => {
+      b.addEventListener('click', () => {
+        active = active === b.dataset.filter ? null : b.dataset.filter!;
+        apply();
+        // the goat notices the fuss (he gets used to it)
+        (window as any).__goat?.startle?.();
+      });
+    });
   }
 </script>

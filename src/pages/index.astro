@@ -10,15 +10,16 @@ const linkClass =
   'text-neutral-900 underline decoration-neutral-300 decoration-1 underline-offset-[3px] hover:decoration-neutral-900 transition-colors';
 ---
 
-<Page title="Azuolas Compy" description="Founder building Moment.">
+<Page title="Azuolas Compy" description="I build for problems I live through." lock>
   <Header />
 
   <p class="mt-4 text-[14px] leading-relaxed text-neutral-800">
-    Founder building <a href="/projects/moment" class={linkClass}>Moment</a>. I build for problems I live through — full-stack across crypto, AI, and consumer, with an architecture degree from a past life in London. I live in NYC.
-    You can find me on <a href="https://x.com/0xmigi" target="_blank" rel="noopener noreferrer" class={linkClass}>X</a> and <a href="https://github.com/0xmigi" target="_blank" rel="noopener noreferrer" class={linkClass}>GitHub</a>.
+    I build for problems I live through — full-stack across crypto, AI, and consumer. I have an architecture degree from a past life in London but now live in NYC.
+    You can find me on <a href="https://x.com/0xmigi" target="_blank" rel="noopener noreferrer" class={linkClass}>X</a> and <a href="https://github.com/0xmigi" target="_blank" rel="noopener noreferrer" class={linkClass}>GitHub</a> or
+    check out my <button type="button" data-filter="work" class={linkClass}>work</button>, <button type="button" data-filter="project" class={linkClass}>projects</button>, <button type="button" data-filter="writing" class={linkClass}>writing</button>, or <button type="button" data-filter="video" class={linkClass}>videos</button>.
   </p>
 
-  <section class="mt-8">
+  <section class="mt-14 min-h-0 flex-1">
     <Timeline items={items} />
   </section>
 </Page>

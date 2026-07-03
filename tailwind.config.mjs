@@ -6,7 +6,9 @@ export default {
   theme: {
     extend: {
       maxWidth: {
-        column: '32rem',
+        // the classic mobile design width (iPhone logical px) — desktop shows
+        // exactly what a phone shows
+        column: '375px',
       },
     },
   },

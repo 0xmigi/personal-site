@@ -9,12 +9,19 @@ article.
 Entries are MDX files. Drop a new `.mdx` in the folder for its type — it appears on
 the timeline automatically (sorted by `date`, newest first).
 
-| Type    | Folder          | Route            | Timeline tag (default) |
-|---------|-----------------|------------------|------------------------|
-| writing | `src/posts/`    | `/writing/<slug>` | `writing`            |
-| project | `src/projects/` | `/projects/<slug>` | `app`               |
-| video   | `src/videos/`   | `/videos/<slug>`  | `video`              |
-| work    | `src/work/`     | `/work/<slug>`    | `work`               |
+| Type    | Folder          | Route            | Tag (default) |
+|---------|-----------------|------------------|---------------|
+| writing | `src/posts/`    | `/writing/<slug>` | `writing`    |
+| project | `src/projects/` | `/projects/<slug>` | `app`       |
+| video   | `src/videos/`   | `/videos/<slug>`  | `video`      |
+| work    | `src/work/`     | `/work/<slug>`    | `work`       |
+
+Tags show on the year pages (`/<year>`), not on the home timeline — home shows
+titles only. The home timeline's type filters are the words "work, projects,
+writing, or videos" in the bio's last sentence (buttons styled as links; the
+active one gets the orange underline). They key off the entry's *folder*, not
+its `tag`, so overriding `tag` never breaks filtering. No filter is selected
+by default.
 
 The filename (minus `.mdx`) is the slug.
 
@@ -30,10 +37,10 @@ the default above), optional `draft: true` (hides it), optional `agent: true` (a
 
 ### Rules that matter
 
-- **Title length: keep it ≤ ~25 characters.** The home timeline shows titles on a
-  single line; anything longer is **truncated with an ellipsis** on mobile (it will
-  not wrap or break the layout — the full title still shows in the article). Prefer
-  short, punchy titles; put detail in `summary`/body.
+- **Title length: keep it ≤ ~30 characters.** The home timeline shows titles on a
+  single line in a fixed 375px column; anything longer is **truncated with an
+  ellipsis** (it will not wrap or break the layout — the full title still shows in
+  the article). Prefer short, punchy titles; put detail in `summary`/body.
 - **Work entries are placed by their END date**, not start. Set `date` to the end of
   the role (ongoing → today). The full range lives in `period`.
 - **Don't fill in article bodies unless asked.** New entries can ship as frontmatter

@@ -4,11 +4,14 @@ import '../styles/global.css';
 interface Props {
   title?: string;
   description?: string;
+  /** Pin the page to the viewport — no document scroll; a child scrolls instead. */
+  lock?: boolean;
 }
 
 const {
   title = 'Azuolas',
   description = 'Engineer, founder, builder.',
+  lock = false,
 } = Astro.props;
 ---
 
@@ -23,8 +26,18 @@ const {
     <link rel="apple-touch-icon" href="/avatar.jpg" />
     <title>{title}</title>
   </head>
-  <body class="min-h-dvh bg-white text-neutral-900 antialiased selection:bg-neutral-900 selection:text-white">
-    <main class="mx-auto max-w-column px-6 py-16 md:py-24">
+  <body
+    class:list={[
+      'bg-white text-neutral-900 antialiased selection:bg-neutral-900 selection:text-white',
+      lock ? 'fixed inset-0 overflow-hidden overscroll-none' : 'min-h-dvh',
+    ]}
+  >
+    <main
+      class:list={[
+        'mx-auto max-w-column px-6 py-16 md:py-24',
+        lock && 'flex h-full flex-col',
+      ]}
+    >
       <slot />
     </main>
   </body>

@@ -70,10 +70,24 @@ const dotsWrap = 'ml-3 mr-4 mt-[2px] grid shrink-0 grid-cols-[repeat(4,4px)] ite
       <g class="g-tail">
         <path d="M47.5 18.5 Q52 15 51.5 10.5" stroke="#404040" stroke-width="1.25" vector-effect="non-scaling-stroke" stroke-linecap="round" />
       </g>
-      <path class="g-l1" d="M26 30 L26 47" stroke="#404040" stroke-width="1.25" vector-effect="non-scaling-stroke" stroke-linecap="round" />
-      <path class="g-l2" d="M32 30 L32 47" stroke="#404040" stroke-width="1.25" vector-effect="non-scaling-stroke" stroke-linecap="round" />
-      <path class="g-l3" d="M40 30 L40 47" stroke="#404040" stroke-width="1.25" vector-effect="non-scaling-stroke" stroke-linecap="round" />
-      <path class="g-l4" d="M46 30 L46 47" stroke="#404040" stroke-width="1.25" vector-effect="non-scaling-stroke" stroke-linecap="round" />
+      {/* each leg is thigh + shin with a knee at y39, so lying down is a
+         real fold — no length changes, just joints */}
+      <g class="g-l1">
+        <path d="M26 30 L26 39" stroke="#404040" stroke-width="1.25" vector-effect="non-scaling-stroke" stroke-linecap="round" />
+        <path class="g-shin" d="M26 39 L26 47" stroke="#404040" stroke-width="1.25" vector-effect="non-scaling-stroke" stroke-linecap="round" />
+      </g>
+      <g class="g-l2">
+        <path d="M32 30 L32 39" stroke="#404040" stroke-width="1.25" vector-effect="non-scaling-stroke" stroke-linecap="round" />
+        <path class="g-shin" d="M32 39 L32 47" stroke="#404040" stroke-width="1.25" vector-effect="non-scaling-stroke" stroke-linecap="round" />
+      </g>
+      <g class="g-l3">
+        <path d="M40 30 L40 39" stroke="#404040" stroke-width="1.25" vector-effect="non-scaling-stroke" stroke-linecap="round" />
+        <path class="g-shin" d="M40 39 L40 47" stroke="#404040" stroke-width="1.25" vector-effect="non-scaling-stroke" stroke-linecap="round" />
+      </g>
+      <g class="g-l4">
+        <path d="M46 30 L46 39" stroke="#404040" stroke-width="1.25" vector-effect="non-scaling-stroke" stroke-linecap="round" />
+        <path class="g-shin" d="M46 39 L46 47" stroke="#404040" stroke-width="1.25" vector-effect="non-scaling-stroke" stroke-linecap="round" />
+      </g>
       <rect class="g-body" x="21" y="15" width="28" height="17" rx="8.5" fill="white" stroke="#404040" stroke-width="1.25" vector-effect="non-scaling-stroke" />
       <g class="g-head">
         <path d="M15 9.5 Q13.5 3.5 17.5 2" stroke="#404040" stroke-width="1.25" vector-effect="non-scaling-stroke" stroke-linecap="round" />
@@ -84,9 +98,12 @@ const dotsWrap = 'ml-3 mr-4 mt-[2px] grid shrink-0 grid-cols-[repeat(4,4px)] ite
         <circle class="g-eye" cx="13" cy="14" r="1.6" fill="#171717" />
       </g>
       <circle class="g-body" cx="22" cy="24" r="2" fill="#f97316" />
+      {/* z's rising from where his head rests once he's asleep — drawn as
+         pen strokes (non-scaling) so they stay crisp, and sized like cartoon
+         z's: big relative to the goat, or they read as smoke at 34px */}
       <g class="g-zzz" aria-hidden="true">
-        <text x="26" y="6" font-size="8" font-style="italic" fill="#a3a3a3">z</text>
-        <text x="33" y="1" font-size="6" font-style="italic" fill="#c4c4c4">z</text>
+        <path class="g-z1" d="M13 20 L20 20 L13 27 L20 27" fill="none" stroke="#a3a3a3" stroke-width="1" vector-effect="non-scaling-stroke" stroke-linecap="round" stroke-linejoin="round" />
+        <path class="g-z2" d="M23 10 L30 10 L23 17 L30 17" fill="none" stroke="#c4c4c4" stroke-width="1" vector-effect="non-scaling-stroke" stroke-linecap="round" stroke-linejoin="round" />
       </g>
       </svg>
     </div>
@@ -155,21 +172,6 @@ const dotsWrap = 'ml-3 mr-4 mt-[2px] grid shrink-0 grid-cols-[repeat(4,4px)] ite
     border-radius: 9999px;
     background: #e5e5e5;
     transition: transform 0.12s ease, background-color 0.12s ease;
-  }
-  .now-ring {
-    position: absolute;
-    left: 50%;
-    top: 50%;
-    width: 18px;
-    height: 14px;
-    transform: translate(-50%, -50%) rotate(-6deg);
-    pointer-events: none;
-  }
-  .now-ring path {
-    fill: none;
-    stroke: #f97316;
-    stroke-width: 3.5;
-    stroke-linecap: round;
   }
   .dot-filled {
     background: #404040;
@@ -257,6 +259,12 @@ const dotsWrap = 'ml-3 mr-4 mt-[2px] grid shrink-0 grid-cols-[repeat(4,4px)] ite
   #site-goat .g-l2 { transform-box: view-box; transform-origin: 32px 30px; }
   #site-goat .g-l3 { transform-box: view-box; transform-origin: 40px 30px; }
   #site-goat .g-l4 { transform-box: view-box; transform-origin: 46px 30px; }
+  /* shins pivot at their knees */
+  #site-goat .g-shin { transform-box: view-box; transition: transform 0.4s ease; }
+  #site-goat .g-l1 .g-shin { transform-origin: 26px 39px; }
+  #site-goat .g-l2 .g-shin { transform-origin: 32px 39px; }
+  #site-goat .g-l3 .g-shin { transform-origin: 40px 39px; }
+  #site-goat .g-l4 .g-shin { transform-origin: 46px 39px; }
   #goat-walk.goat-walking .g-l1,
   #goat-walk.goat-walking .g-l4 {
     animation: goat-step 0.4s linear infinite;
@@ -307,35 +315,56 @@ const dotsWrap = 'ml-3 mr-4 mt-[2px] grid shrink-0 grid-cols-[repeat(4,4px)] ite
     animation: none;
     transform: translateY(13px) rotate(-20deg);
   }
+  /* legs fold at the knee and tuck under the body — thigh sweeps flat,
+     shin doubles back on it, full leg length preserved; the rear pair
+     kneels a beat after the front, like an actual goat going down */
   #goat-walk.goat-lying .g-l1,
   #goat-walk.goat-lying .g-l2 {
     animation: none;
-    transform: translateY(13px) rotate(-75deg);
+    transform: translateY(13px) rotate(-80deg);
+  }
+  #goat-walk.goat-lying .g-l1 .g-shin,
+  #goat-walk.goat-lying .g-l2 .g-shin {
+    transform: rotate(165deg);
   }
   #goat-walk.goat-lying .g-l3,
   #goat-walk.goat-lying .g-l4 {
     animation: none;
-    transform: translateY(13px) rotate(75deg);
+    transition-delay: 0.18s;
+    transform: translateY(13px) rotate(80deg);
+  }
+  #goat-walk.goat-lying .g-l3 .g-shin,
+  #goat-walk.goat-lying .g-l4 .g-shin {
+    transition-delay: 0.18s;
+    transform: rotate(-165deg);
   }
   #goat-walk.goat-lying .g-ear {
     animation: none;
   }
-  /* stage 2 — asleep: the head sinks low, chin coming to rest by his legs */
+  /* stage 2 — asleep: the head sinks low, chin coming to rest by his legs,
+     and the tail gives up too */
   #goat-walk.goat-sleeping .g-head {
     transition: transform 0.9s ease-in-out;
     transform: translate(-4px, 21px) rotate(-6deg);
+  }
+  /* the tail waits for the head to settle before it gives up */
+  #goat-walk.goat-sleeping .g-tail {
+    transition: transform 0.7s ease-in-out 0.75s;
+    transform: translateY(13px) rotate(78deg);
   }
   #goat-walk.goat-sleeping .g-eye {
     animation: none;
     transform: scaleY(0.12);
   }
-  #site-goat .g-zzz {
+  #site-goat .g-zzz path {
     opacity: 0;
     transform-box: view-box;
-    transform-origin: 30px 6px;
   }
-  #goat-walk.goat-sleeping .g-zzz {
-    animation: goat-zzz 2.6s ease-in-out infinite;
+  #goat-walk.goat-sleeping .g-z1 {
+    animation: goat-zzz 2.8s ease-in-out infinite;
+  }
+  #goat-walk.goat-sleeping .g-z2 {
+    animation: goat-zzz 2.8s ease-in-out infinite 1.4s;
   }
   @keyframes goat-bob {
     0%, 100% { transform: translateY(0); }
@@ -410,9 +439,9 @@ const dotsWrap = 'ml-3 mr-4 mt-[2px] grid shrink-0 grid-cols-[repeat(4,4px)] ite
     50% { transform: translateY(12.3px); }
   }
   @keyframes goat-zzz {
-    0%, 20% { opacity: 0; transform: translateY(10px); }
-    50%, 75% { opacity: 1; }
-    100% { opacity: 0; transform: translateY(5px); }
+    0% { opacity: 0; transform: translateY(3px); }
+    35%, 60% { opacity: 1; }
+    100% { opacity: 0; transform: translateY(-7px); }
   }
   @media (prefers-reduced-motion: reduce) {
     #goat-walk,
@@ -424,18 +453,6 @@ const dotsWrap = 'ml-3 mr-4 mt-[2px] grid shrink-0 grid-cols-[repeat(4,4px)] ite
 </style>
 
 <script>
-  // hand-drawn ring marking the current week — computed client-side so it
-  // stays current without a rebuild
-  const NOW_RING =
-    '<svg class="now-ring" viewBox="0 0 40 32" aria-hidden="true"><path d="M20.2 3.1C30.5 1.8 37.8 8.2 37.2 16.1 36.6 24.6 28.4 29.6 19.1 29.2 10.2 28.8 2.6 24 2.9 15.6 3.2 7.4 11.5 3.9 22.8 4.4"/></svg>';
-
-  function markNow() {
-    document.querySelectorAll('.now-ring').forEach((el) => el.remove());
-    const t = new Date();
-    const key = `${t.getFullYear()}-${t.getMonth()}-${Math.min(3, Math.floor((t.getDate() - 1) / 7))}`;
-    document.querySelector(`[data-tl-dot="${key}"]`)?.insertAdjacentHTML('beforeend', NOW_RING);
-  }
-
   // the agent goat: wanders his line, watches the cursor, and gets braver
   // about you the longer you're around
   const walk = document.getElementById('goat-walk');
@@ -700,7 +717,6 @@ const dotsWrap = 'ml-3 mr-4 mt-[2px] grid shrink-0 grid-cols-[repeat(4,4px)] ite
       if (!link) return;
       document.querySelector(`[data-tl-dot="${link.dataset.tlLink}"]`)?.classList.remove('dot-active');
     });
-    markNow();
 
     // the filter words (they live in the bio sentence): pick one type, the
     // dots + titles re-derive from it; click the active word again to go
@@ -747,7 +763,6 @@ const dotsWrap = 'ml-3 mr-4 mt-[2px] grid shrink-0 grid-cols-[repeat(4,4px)] ite
           )
           .join('');
       }
-      markNow();
     };
 
     buttons.forEach((b) => {

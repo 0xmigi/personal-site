@@ -50,18 +50,22 @@ const linkClass =
   <div class="mt-4 flex items-start gap-8 py-3">
     <YearHeatmap year={year} activity={activity} baseline={baseline} />
 
-    <ul class="min-w-0 flex-1 space-y-2.5 text-[14px]">
+    <ul class="min-w-0 flex-1 space-y-4 text-[14px]">
       {items.map((it) => (
         <li
-          class="flex items-baseline justify-between gap-4"
+          class="min-w-0"
           data-commits={it.commits ? JSON.stringify(it.commits) : undefined}
           data-workdays={workDaysByHref[it.href] ? JSON.stringify(workDaysByHref[it.href]) : undefined}
         >
+          {/* title on its own line — full width, so it rarely wraps and never
+             collides with the meta below */}
           <a href={it.href} class={linkClass}>{it.title}</a>
-          <span class="flex shrink-0 items-baseline gap-3 text-[14px] text-neutral-400">
+          {/* category + date, indented under the title in the muted grey */}
+          <div class="mt-0.5 flex items-baseline gap-1.5 pl-3 text-neutral-400">
             <span>{it.tag}</span>
-            <time class="w-12 text-right tabular-nums">{fmtMonthDay(it.date)}</time>
-          </span>
+            <span aria-hidden="true">·</span>
+            <time class="tabular-nums">{fmtMonthDay(it.date)}</time>
+          </div>
         </li>
       ))}
     </ul>

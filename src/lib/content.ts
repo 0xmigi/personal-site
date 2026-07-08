@@ -1,5 +1,30 @@
-type Frontmatter = { title: string; date: string | Date; draft?: boolean; tag?: string };
+import commitsData from '../data/commits.json';
+
+type Frontmatter = {
+  title: string;
+  date: string | Date;
+  draft?: boolean;
+  tag?: string;
+  repo?: string | string[];
+  start?: string | Date; // work only: role start date (date = end)
+};
 type Mod = { frontmatter: Frontmatter };
+
+const COMMITS = commitsData as Record<string, Record<string, number>>;
+
+// merge the per-repo commit maps for a project into one { day: count } map;
+// a project can point at more than one repo (e.g. an sdk + its demo)
+const commitsFor = (repo?: string | string[]): Record<string, number> | undefined => {
+  if (!repo) return undefined;
+  const repos = Array.isArray(repo) ? repo : [repo];
+  const merged: Record<string, number> = {};
+  for (const r of repos) {
+    const map = COMMITS[r];
+    if (!map) continue;
+    for (const [day, n] of Object.entries(map)) merged[day] = (merged[day] ?? 0) + n;
+  }
+  return Object.keys(merged).length ? merged : undefined;
+};
 
 const postModules = import.meta.glob<Mod>('../posts/*.mdx', { eager: true });
 const projectModules = import.meta.glob<Mod>('../projects/*.mdx', { eager: true });
@@ -14,6 +39,8 @@ export interface Item {
   date: string; // normalized YYYY-MM-DD (UTC)
   tag: string;
   type: ItemType; // folder-derived — `tag` is just the display label
+  commits?: Record<string, number>; // GitHub commit days → count, for repo-backed projects
+  start?: string; // work only: normalized start date (YYYY-MM-DD); `date` is the end
 }
 
 const slugOf = (path: string) => path.split('/').pop()!.replace(/\.mdx$/, '');
@@ -29,6 +56,8 @@ const collect = (modules: Record<string, Mod>, base: string, tag: string, type: 
       date: toISO(mod.frontmatter.date),
       tag: mod.frontmatter.tag ?? tag,
       type,
+      commits: commitsFor(mod.frontmatter.repo),
+      start: mod.frontmatter.start ? toISO(mod.frontmatter.start) : undefined,
     }));
 
 export function getItems(): Item[] {
@@ -38,4 +67,22 @@ export function getItems(): Item[] {
     ...collect(videoModules, '/videos', 'video', 'video'),
     ...collect(workModules, '/work', 'work', 'work'),
   ];
+}
+
+// every repo's commits merged into one { day: count } map — the always-on
+// coding-activity heat behind the timeline grids
+export function getCommitActivity(): Record<string, number> {
+  const merged: Record<string, number> = {};
+  for (const map of Object.values(COMMITS)) {
+    for (const [day, n] of Object.entries(map)) merged[day] = (merged[day] ?? 0) + n;
+  }
+  return merged;
+}
+
+// employment date ranges — used to paint a faint weekday baseline on the grids
+// for the full span of each role (a "was working here" layer under the commits)
+export function getWorkSpans(): { start: string; end: string }[] {
+  return getItems()
+    .filter((it) => it.type === 'work' && it.start)
+    .map((it) => ({ start: it.start!, end: it.date }));
 }

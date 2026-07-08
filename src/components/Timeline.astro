@@ -1,5 +1,6 @@
 ---
-import { yearOf } from '../lib/date';
+import { yearOf, eachWeekday } from '../lib/date';
+import { getCommitActivity, getWorkSpans } from '../lib/content';
 
 export interface TimelineItem {
   title: string;
@@ -7,6 +8,8 @@ export interface TimelineItem {
   date: string;
   tag?: string;
   type: string;
+  commits?: Record<string, number>;
+  start?: string; // work only: role start (date = end)
 }
 
 interface Props {
@@ -19,32 +22,61 @@ const sorted = [...items].sort(
   (a, b) => new Date(b.date).valueOf() - new Date(a.date).valueOf(),
 );
 
-const weekOf = (d: Date) => Math.min(3, Math.floor((d.getUTCDate() - 1) / 7));
+const weekOf = (day: number) => Math.min(3, Math.floor((day - 1) / 7));
 
 type Item = TimelineItem & { cell: string };
-type Row = { year: number; items: Item[]; filled: Set<string> };
+type Row = { year: number; items: Item[] };
 
+// group entries by year for the title list; the dot grid is commit activity,
+// not entry dates, so the two are computed independently
 const groups: Row[] = [];
 for (const it of sorted) {
   const y = yearOf(it.date);
   let g = groups.find((x) => x.year === y);
   if (!g) {
-    g = { year: y, items: [], filled: new Set() };
+    g = { year: y, items: [] };
     groups.push(g);
   }
   const d = new Date(it.date);
-  const m = d.getUTCMonth();
-  const w = weekOf(d);
-  g.filled.add(`${m}-${w}`);
-  g.items.push({ ...it, cell: `${y}-${m}-${w}` });
+  g.items.push({ ...it, cell: `${y}-${d.getUTCMonth()}-${weekOf(d.getUTCDate())}` });
 }
 
-// all items ship to the client (typed) so the filters can re-derive dots +
-// titles per type; the server render below is the unfiltered view
+// the always-on layer: every repo's commits, bucketed into year-month-week
+// cells and mapped to a 0–4 grey heat level
+const activity = getCommitActivity();
+const cellCommits: Record<string, number> = {};
+for (const [iso, n] of Object.entries(activity)) {
+  const [y, mo, da] = iso.split('-').map(Number);
+  const key = `${y}-${mo - 1}-${weekOf(da)}`;
+  cellCommits[key] = (cellCommits[key] ?? 0) + n;
+}
+const homeLevel = (n: number) => (n === 0 ? 0 : n <= 3 ? 1 : n <= 9 ? 2 : n <= 24 ? 3 : 4);
+
+// work baseline: any month-week cell a role's weekdays touch gets at least the
+// faintest grey, so employment spans read as a floor under the commit heat
+const workCells = new Set<string>();
+for (const s of getWorkSpans()) {
+  eachWeekday(s.start, s.end, (_iso, y, mo, day) => workCells.add(`${y}-${mo}-${weekOf(day)}`));
+}
+
+const levelFor = (year: number, m: number, w: number) => {
+  const key = `${year}-${m}-${w}`;
+  return Math.max(homeLevel(cellCommits[key] ?? 0), workCells.has(key) ? 1 : 0);
+};
+
+// items ship to the client so the filter can re-derive titles per type, and the
+// desktop hover can look up a project's own commits. dots are static (rendered
+// server-side from commit activity), so they aren't part of this payload.
 const yearsData = groups.map((g) => ({
   year: g.year,
-  filled: [...g.filled],
-  items: g.items.map((it) => ({ title: it.title, href: it.href, cell: it.cell, type: it.type })),
+  items: g.items.map((it) => ({
+    title: it.title,
+    href: it.href,
+    cell: it.cell,
+    type: it.type,
+    commits: it.commits,
+    span: it.type === 'work' && it.start ? { start: it.start, end: it.date } : undefined,
+  })),
 }));
 
 // 12 months (rows, December at top) x 4 weeks (cols)
@@ -131,12 +163,15 @@ const dotsWrap = 'ml-3 mr-4 mt-[2px] grid shrink-0 grid-cols-[repeat(4,4px)] ite
           class={dotsWrap}
           style="height: 114px; grid-template-rows: repeat(12, 1fr);"
         >
-          {cells.map(({ m, w }) => (
-            <span
-              class:list={['dot', d.filled.includes(`${m}-${w}`) && 'dot-filled']}
-              data-tl-dot={`${d.year}-${m}-${w}`}
-            />
-          ))}
+          {cells.map(({ m, w }) => {
+            const lv = levelFor(d.year, m, w);
+            return (
+              <span
+                class:list={['dot', lv && `dot-lv${lv}`]}
+                data-tl-dot={`${d.year}-${m}-${w}`}
+              />
+            );
+          })}
         </div>
 
         {/* titles only — tags + exact dates live on the year pages */}
@@ -173,12 +208,36 @@ const dotsWrap = 'ml-3 mr-4 mt-[2px] grid shrink-0 grid-cols-[repeat(4,4px)] ite
     background: #e5e5e5;
     transition: transform 0.12s ease, background-color 0.12s ease;
   }
-  .dot-filled {
+  /* always-on coding activity: grey deepens with commits that month-week */
+  .dot-lv1 {
+    background: #c2c2c2;
+  }
+  .dot-lv2 {
+    background: #949494;
+  }
+  .dot-lv3 {
+    background: #666666;
+  }
+  .dot-lv4 {
     background: #404040;
   }
-  .dot-active {
-    transform: scale(2.2);
-    background: #171717;
+  /* desktop hover: a single project's commits light orange on top of the grey,
+     bigger with more commits — its slice of the overall activity. defined after
+     the grey levels so orange always wins the overlap */
+  .dot-heat-1 {
+    background: #fdba74;
+    transform: scale(1.5);
+    z-index: 1;
+  }
+  .dot-heat-2 {
+    background: #fb923c;
+    transform: scale(1.8);
+    z-index: 1;
+  }
+  .dot-heat-3 {
+    background: #ea580c;
+    transform: scale(2.1);
+    z-index: 1;
   }
 
   /* the agent goat: #goat-walk owns position + facing, the svg owns gait */
@@ -706,21 +765,85 @@ const dotsWrap = 'ml-3 mr-4 mt-[2px] grid shrink-0 grid-cols-[repeat(4,4px)] ite
   const modules = document.getElementById('tl-modules');
   const dataEl = document.getElementById('tl-data');
   if (modules && dataEl) {
-    // hover a title -> light its dot
+    // href -> what to light on hover: a repo-backed project's commit map, or a
+    // work role's employment span. built once; filter re-renders reuse the same
+    // anchors' hrefs so it stays valid
+    type Span = { start: string; end: string };
+    const COMMITS_BY_HREF: Record<string, Record<string, number>> = {};
+    const SPAN_BY_HREF: Record<string, Span> = {};
+    for (const y of JSON.parse(dataEl.textContent || '[]') as {
+      items: { href: string; commits?: Record<string, number>; span?: Span }[];
+    }[]) {
+      for (const it of y.items) {
+        if (it.commits) COMMITS_BY_HREF[it.href] = it.commits;
+        if (it.span) SPAN_BY_HREF[it.href] = it.span;
+      }
+    }
+
+    // month-week cell for a YYYY-MM-DD, matching the server's grid keys
+    const weekOfMonth = (day: number) => Math.min(3, Math.floor((day - 1) / 7));
+    const heatLevel = (n: number) => (n >= 5 ? 3 : n >= 3 ? 2 : 1);
+
+    let heated: Element[] = [];
+    const clearHeat = () => {
+      heated.forEach((el) =>
+        el.classList.remove('dot-heat-1', 'dot-heat-2', 'dot-heat-3'),
+      );
+      heated = [];
+    };
+    const lightCells = (cells: Iterable<[string, number]>) => {
+      for (const [cell, lv] of cells) {
+        modules.querySelectorAll(`[data-tl-dot="${cell}"]`).forEach((el) => {
+          el.classList.add(`dot-heat-${lv}`);
+          heated.push(el);
+        });
+      }
+    };
+    // desktop bonus: hovering a project tints its own commits orange on top of
+    // the grey activity — its slice of the whole, across all year rows, shaded
+    // by how much
+    const lightHeat = (commits: Record<string, number>) => {
+      const perCell = new Map<string, number>();
+      for (const [iso, n] of Object.entries(commits)) {
+        const [y, m, d] = iso.split('-').map(Number);
+        const cell = `${y}-${m - 1}-${weekOfMonth(d)}`;
+        perCell.set(cell, (perCell.get(cell) ?? 0) + n);
+      }
+      lightCells([...perCell].map(([cell, n]) => [cell, heatLevel(n)]));
+    };
+    // ...and hovering a work role tints every month-week its weekdays touched —
+    // a flat mid-orange (no per-day intensity, it's just "when I worked here")
+    const lightSpan = ({ start, end }: Span) => {
+      const [sy, sm, sd] = start.split('-').map(Number);
+      const [ey, em, ed] = end.split('-').map(Number);
+      const last = Date.UTC(ey, em - 1, ed);
+      const cells = new Set<string>();
+      for (let t = Date.UTC(sy, sm - 1, sd); t <= last; t += 86400000) {
+        const d = new Date(t);
+        const dow = d.getUTCDay();
+        if (dow === 0 || dow === 6) continue;
+        cells.add(`${d.getUTCFullYear()}-${d.getUTCMonth()}-${weekOfMonth(d.getUTCDate())}`);
+      }
+      lightCells([...cells].map((cell) => [cell, 2]));
+    };
+
     modules.addEventListener('mouseover', (e) => {
       const link = (e.target as Element).closest('[data-tl-link]') as HTMLElement | null;
       if (!link) return;
-      document.querySelector(`[data-tl-dot="${link.dataset.tlLink}"]`)?.classList.add('dot-active');
+      clearHeat();
+      const href = link.getAttribute('href') || '';
+      if (COMMITS_BY_HREF[href]) lightHeat(COMMITS_BY_HREF[href]);
+      else if (SPAN_BY_HREF[href]) lightSpan(SPAN_BY_HREF[href]);
     });
     modules.addEventListener('mouseout', (e) => {
-      const link = (e.target as Element).closest('[data-tl-link]') as HTMLElement | null;
-      if (!link) return;
-      document.querySelector(`[data-tl-dot="${link.dataset.tlLink}"]`)?.classList.remove('dot-active');
+      if (!(e.target as Element).closest('[data-tl-link]')) return;
+      clearHeat();
     });
 
-    // the filter words (they live in the bio sentence): pick one type, the
-    // dots + titles re-derive from it; click the active word again to go
-    // back to everything
+    // the filter words (they live in the bio sentence): pick one type and the
+    // title list narrows to it; click the active word again to go back to
+    // everything. the commit-activity dots are static — the filter never
+    // touches them.
     type TlItem = { title: string; href: string; cell: string; type: string };
     type TlYear = { year: number; items: TlItem[] };
     const YEARS: TlYear[] = JSON.parse(dataEl.textContent || '[]');
@@ -733,12 +856,6 @@ const dotsWrap = 'ml-3 mr-4 mt-[2px] grid shrink-0 grid-cols-[repeat(4,4px)] ite
     const BTN_ACTIVE =
       'text-neutral-900 underline decoration-[#f97316] decoration-2 underline-offset-[3px] transition-colors';
 
-    const CELLS: string[] = [];
-    for (let i = 0; i < 12; i++) {
-      const m = 11 - i;
-      for (let w = 0; w < 4; w++) CELLS.push(`${m}-${w}`);
-    }
-
     const buttons = [...document.querySelectorAll('[data-filter]')] as HTMLElement[];
     let active: string | null = null;
 
@@ -750,11 +867,9 @@ const dotsWrap = 'ml-3 mr-4 mt-[2px] grid shrink-0 grid-cols-[repeat(4,4px)] ite
         const row = modules.querySelector(`[data-row="${d.year}"]`) as HTMLElement | null;
         if (!row) continue;
         const items = active ? d.items.filter((it) => it.type === active) : d.items;
+        // hide a year with nothing of this type; leave its commit dots as they
+        // are — only the title list re-renders
         row.style.display = items.length ? '' : 'none';
-        const filled = new Set(items.map((it) => it.cell));
-        row.querySelector('[data-dots]')!.innerHTML = CELLS.map(
-          (c) => `<span class="dot${filled.has(`${d.year}-${c}`) ? ' dot-filled' : ''}" data-tl-dot="${d.year}-${c}"></span>`,
-        ).join('');
         row.querySelector('[data-titles]')!.innerHTML = items
           .slice(0, 4)
           .map(

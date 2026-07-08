@@ -1,12 +1,18 @@
 ---
 interface Props {
   year: number;
-  dates: string[]; // YYYY-MM-DD strings that should be lit
+  activity: Record<string, number>; // YYYY-MM-DD -> commit count that day
+  baseline?: string[]; // YYYY-MM-DD weekdays inside a work span — faint grey floor
   height?: number; // total pixel height — matches the home page bio-top → 2024-bottom rectangle
 }
 
-const { year, dates, height = 512 } = Astro.props;
-const filled = new Set(dates);
+const { year, activity, baseline = [], height = 512 } = Astro.props;
+const worked = new Set(baseline);
+
+// commits that day -> 0–4 grey heat level (GitHub-style); a worked weekday with
+// no commits still gets the faintest level so employment reads as a floor
+const dayLevel = (n: number) => (n === 0 ? 0 : n <= 2 ? 1 : n <= 5 ? 2 : n <= 9 ? 3 : 4);
+const levelFor = (iso: string) => Math.max(dayLevel(activity[iso] ?? 0), worked.has(iso) ? 1 : 0);
 
 const jan1DOW = new Date(Date.UTC(year, 0, 1)).getUTCDay(); // 0=Sun
 const isLeap = (year % 4 === 0 && year % 100 !== 0) || year % 400 === 0;
@@ -14,23 +20,23 @@ const daysInYear = isLeap ? 366 : 365;
 
 const pad = (n: number) => String(n).padStart(2, '0');
 
-type Cell = { iso: string; filled: boolean } | null;
+type Cell = { iso: string; level: number } | null;
 
 let maxRow = 0;
-const days: { row: number; col: number; iso: string; filled: boolean }[] = [];
+const days: { row: number; col: number; iso: string; level: number }[] = [];
 for (let i = 0; i < daysInYear; i++) {
   const d = new Date(Date.UTC(year, 0, 1 + i));
   const col = d.getUTCDay();
   const row = Math.floor((i + jan1DOW) / 7);
   if (row > maxRow) maxRow = row;
   const iso = `${year}-${pad(d.getUTCMonth() + 1)}-${pad(d.getUTCDate())}`;
-  days.push({ row, col, iso, filled: filled.has(iso) });
+  days.push({ row, col, iso, level: levelFor(iso) });
 }
 
 // newest week at the top
 const grid: Cell[][] = Array.from({ length: maxRow + 1 }, () => Array<Cell>(7).fill(null));
 for (const d of days) {
-  grid[maxRow - d.row][d.col] = { iso: d.iso, filled: d.filled };
+  grid[maxRow - d.row][d.col] = { iso: d.iso, level: d.level };
 }
 const flat = grid.flat();
 const numRows = maxRow + 1;
@@ -43,7 +49,7 @@ const numRows = maxRow + 1;
 >
   {flat.map((cell) =>
     cell ? (
-      <span class:list={['ydot', cell.filled && 'ydot-on']} title={cell.iso} />
+      <span class:list={['ydot', cell.level && `ydot-lv${cell.level}`]} title={cell.iso} />
     ) : (
       <span class="block h-1 w-1" />
     ),
@@ -59,40 +65,33 @@ const numRows = maxRow + 1;
     border-radius: 9999px;
     background: #e5e5e5;
   }
-  .ydot-on {
+  /* always-on coding activity: grey deepens with commits that day */
+  .ydot-lv1 {
+    background: #c2c2c2;
+  }
+  .ydot-lv2 {
+    background: #949494;
+  }
+  .ydot-lv3 {
+    background: #666666;
+  }
+  .ydot-lv4 {
     background: #404040;
   }
-</style>
-
-{/* global: the ring is injected client-side, so scoped styles wouldn't reach it */}
-<style is:global>
-  .now-ring {
-    position: absolute;
-    left: 50%;
-    top: 50%;
-    width: 18px;
-    height: 14px;
-    transform: translate(-50%, -50%) rotate(-6deg);
-    pointer-events: none;
+  /* desktop hover: this project's commits in orange, on top of the grey */
+  .ydot-heat-1 {
+    background: #fdba74;
+    transform: scale(1.6);
+    z-index: 1;
   }
-  .now-ring path {
-    fill: none;
-    stroke: #f97316;
-    stroke-width: 3.5;
-    stroke-linecap: round;
+  .ydot-heat-2 {
+    background: #fb923c;
+    transform: scale(1.9);
+    z-index: 1;
+  }
+  .ydot-heat-3 {
+    background: #ea580c;
+    transform: scale(2.2);
+    z-index: 1;
   }
 </style>
-
-<script>
-  // hand-drawn ring on today's dot — computed in the browser so the static
-  // page never needs a rebuild; no-op on past years' pages
-  const pad = (n: number) => String(n).padStart(2, '0');
-  const t = new Date();
-  const iso = `${t.getFullYear()}-${pad(t.getMonth() + 1)}-${pad(t.getDate())}`;
-  document
-    .querySelector(`.ydot[title="${iso}"]`)
-    ?.insertAdjacentHTML(
-      'beforeend',
-      '<svg class="now-ring" viewBox="0 0 40 32" aria-hidden="true"><path d="M20.2 3.1C30.5 1.8 37.8 8.2 37.2 16.1 36.6 24.6 28.4 29.6 19.1 29.2 10.2 28.8 2.6 24 2.9 15.6 3.2 7.4 11.5 3.9 22.8 4.4"/></svg>',
-    );
-</script>

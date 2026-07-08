@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "astro dev",
     "start": "astro dev",
-    "build": "astro build",
+    "build": "node scripts/fetch-commits.mjs && astro build",
+    "sync-commits": "node scripts/fetch-commits.mjs",
     "preview": "astro preview",
     "astro": "astro"
   },

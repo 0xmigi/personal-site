@@ -2,8 +2,8 @@
 import Page from '../layouts/Page.astro';
 import Header from '../components/Header.astro';
 import YearHeatmap from '../components/YearHeatmap.astro';
-import { getItems } from '../lib/content';
-import { fmtMonthDay, yearOf } from '../lib/date';
+import { getItems, getCommitActivity, getWorkSpans } from '../lib/content';
+import { fmtMonthDay, yearOf, eachWeekday } from '../lib/date';
 
 export async function getStaticPaths() {
   const years = [...new Set(getItems().map((it) => yearOf(it.date)))];
@@ -16,7 +16,29 @@ const items = getItems()
   .filter((it) => yearOf(it.date) === year)
   .sort((a, b) => new Date(b.date).valueOf() - new Date(a.date).valueOf());
 
-const dates = items.map((it) => it.date);
+// this year's slice of the commit activity — the grey heat behind the calendar
+const activity = Object.fromEntries(
+  Object.entries(getCommitActivity()).filter(([iso]) => iso.startsWith(`${year}-`)),
+);
+
+// weekdays this year that fall inside an employment span — the faint floor
+const baseline: string[] = [];
+for (const s of getWorkSpans()) {
+  eachWeekday(s.start, s.end, (iso, y) => {
+    if (y === year) baseline.push(iso);
+  });
+}
+
+// per-work-role weekdays this year, so hovering a role can light its own span
+const workDaysByHref: Record<string, string[]> = {};
+for (const it of items) {
+  if (it.type !== 'work' || !it.start) continue;
+  const days: string[] = [];
+  eachWeekday(it.start, it.date, (iso, y) => {
+    if (y === year) days.push(iso);
+  });
+  if (days.length) workDaysByHref[it.href] = days;
+}
 
 const linkClass =
   'text-neutral-900 underline decoration-transparent hover:decoration-neutral-300 underline-offset-[3px] transition-colors';
@@ -26,11 +48,15 @@ const linkClass =
   <Header section={String(year)} />
 
   <div class="mt-4 flex items-start gap-8 py-3">
-    <YearHeatmap year={year} dates={dates} />
+    <YearHeatmap year={year} activity={activity} baseline={baseline} />
 
     <ul class="min-w-0 flex-1 space-y-2.5 text-[14px]">
       {items.map((it) => (
-        <li class="flex items-baseline justify-between gap-4">
+        <li
+          class="flex items-baseline justify-between gap-4"
+          data-commits={it.commits ? JSON.stringify(it.commits) : undefined}
+          data-workdays={workDaysByHref[it.href] ? JSON.stringify(workDaysByHref[it.href]) : undefined}
+        >
           <a href={it.href} class={linkClass}>{it.title}</a>
           <span class="flex shrink-0 items-baseline gap-3 text-[14px] text-neutral-400">
             <span>{it.tag}</span>
@@ -41,3 +67,34 @@ const linkClass =
     </ul>
   </div>
 </Page>
+
+<script>
+  // hovering an entry lights its own days orange (the day-level version of the
+  // home timeline's heat): a project by commit count (graduated), a work role
+  // across every weekday it covered (flat mid-orange)
+  const heatLevel = (n: number) => (n >= 5 ? 3 : n >= 3 ? 2 : 1);
+  let lit: Element[] = [];
+  const clear = () => {
+    lit.forEach((el) => el.classList.remove('ydot-heat-1', 'ydot-heat-2', 'ydot-heat-3'));
+    lit = [];
+  };
+  const light = (iso: string, lv: number) => {
+    const dot = document.querySelector(`.ydot[title="${iso}"]`);
+    if (dot) {
+      dot.classList.add(`ydot-heat-${lv}`);
+      lit.push(dot);
+    }
+  };
+  for (const row of document.querySelectorAll<HTMLElement>('[data-commits],[data-workdays]')) {
+    const commits = row.dataset.commits
+      ? (JSON.parse(row.dataset.commits) as Record<string, number>)
+      : null;
+    const workdays = row.dataset.workdays ? (JSON.parse(row.dataset.workdays) as string[]) : null;
+    row.addEventListener('mouseenter', () => {
+      clear();
+      if (commits) for (const [iso, n] of Object.entries(commits)) light(iso, heatLevel(n));
+      else if (workdays) for (const iso of workdays) light(iso, 2);
+    });
+    row.addEventListener('mouseleave', clear);
+  }
+</script>

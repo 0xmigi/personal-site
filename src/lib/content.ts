@@ -1,4 +1,5 @@
 import commitsData from '../data/commits.json';
+import { yearOf } from './date';
 
 type Frontmatter = {
   title: string;
@@ -7,6 +8,7 @@ type Frontmatter = {
   tag?: string;
   repo?: string | string[];
   start?: string | Date; // work only: role start date (date = end)
+  pin?: number; // manual sort weight: floats an entry up within its year (higher = higher)
 };
 type Mod = { frontmatter: Frontmatter };
 
@@ -41,7 +43,18 @@ export interface Item {
   type: ItemType; // folder-derived — `tag` is just the display label
   commits?: Record<string, number>; // GitHub commit days → count, for repo-backed projects
   start?: string; // work only: normalized start date (YYYY-MM-DD); `date` is the end
+  pin: number; // manual sort weight within a year (higher floats up); 0 when unset
 }
+
+// Timeline order: newest year first, then — within a year — highest `pin` first,
+// then newest date. Keeps year blocks contiguous and date-ordered by default,
+// while letting `pin` in an entry's frontmatter hand-lift it above its siblings
+// (e.g. a flagship project you want seen over a more recent but smaller one).
+type Sortable = { date: string; pin: number };
+export const byYearPinDate = (a: Sortable, b: Sortable): number =>
+  yearOf(b.date) - yearOf(a.date) ||
+  b.pin - a.pin ||
+  new Date(b.date).valueOf() - new Date(a.date).valueOf();
 
 const slugOf = (path: string) => path.split('/').pop()!.replace(/\.mdx$/, '');
 
@@ -58,6 +71,7 @@ const collect = (modules: Record<string, Mod>, base: string, tag: string, type: 
       type,
       commits: commitsFor(mod.frontmatter.repo),
       start: mod.frontmatter.start ? toISO(mod.frontmatter.start) : undefined,
+      pin: mod.frontmatter.pin ?? 0,
     }));
 
 export function getItems(): Item[] {

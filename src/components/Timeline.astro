@@ -1,6 +1,6 @@
 ---
 import { yearOf, eachWeekday } from '../lib/date';
-import { getCommitActivity, getWorkSpans } from '../lib/content';
+import { getCommitActivity, getWorkSpans, byYearPinDate } from '../lib/content';
 
 export interface TimelineItem {
   title: string;
@@ -10,6 +10,7 @@ export interface TimelineItem {
   type: string;
   commits?: Record<string, number>;
   start?: string; // work only: role start (date = end)
+  pin: number; // manual sort weight within a year (higher floats up)
 }
 
 interface Props {
@@ -18,9 +19,7 @@ interface Props {
 
 const { items } = Astro.props;
 
-const sorted = [...items].sort(
-  (a, b) => new Date(b.date).valueOf() - new Date(a.date).valueOf(),
-);
+const sorted = [...items].sort(byYearPinDate);
 
 const weekOf = (day: number) => Math.min(3, Math.floor((day - 1) / 7));
 

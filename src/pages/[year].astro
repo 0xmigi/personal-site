@@ -2,7 +2,7 @@
 import Page from '../layouts/Page.astro';
 import Header from '../components/Header.astro';
 import YearHeatmap from '../components/YearHeatmap.astro';
-import { getItems, getCommitActivity, getWorkSpans } from '../lib/content';
+import { getItems, getCommitActivity, getWorkSpans, byYearPinDate } from '../lib/content';
 import { fmtMonthDay, yearOf, eachWeekday } from '../lib/date';
 
 export async function getStaticPaths() {
@@ -14,7 +14,7 @@ const { year } = Astro.props as { year: number };
 
 const items = getItems()
   .filter((it) => yearOf(it.date) === year)
-  .sort((a, b) => new Date(b.date).valueOf() - new Date(a.date).valueOf());
+  .sort(byYearPinDate);
 
 // this year's slice of the commit activity — the grey heat behind the calendar
 const activity = Object.fromEntries(

@@ -7,6 +7,8 @@ summary: "An on-chain-first radar for the top novel Solana programs deployed tod
 agent: true
 ---
 
-Building full-stack on crypto, I keep needing the same thing and never having it: a straight answer to *"what's actually new on Solana today?"* Explorers show me volume and price; AI agents summarize what's already popular. Neither tells me which of the ~2,000 daily program deploys is genuinely novel versus the thousandth pump.fun or token clone. So I built the tool I wanted to open every morning.
+Every program that reaches Solana mainnet flows through one native program — the BPF Upgradeable Loader. On Record watches that single chokepoint, strips out the copy-paste (exact-bytecode dupes, then near-dupe clusters like pump.fun and token forks), and ranks what survives by how *novel* it actually is. Every surface leads with an address, a slot, a signature — facts, deduped and scored, no LLM prose.
 
-On Record watches the one native program every deploy flows through — the BPF Upgradeable Loader — strips out the copy-paste (exact-bytecode dupes, then near-dupe clusters), and ranks what survives by how *novel* it actually is. Every surface leads with an address, a slot, a signature: facts, deduped and scored, no LLM prose. It's a novelty-*definition* problem, not a data-fetch one — and the definition is the product. Under the hood it's also a working writeup of a Helius integration: the whole ingestion path runs on Helius webhooks / Laserstream plus RPC.
+## why I'm building it
+
+It answers a question no explorer and no crypto AI agent can today: *"show me the top novel programs deployed to Solana today."* That's a novelty-*definition* problem, not a data-fetch problem — and the definition is the product. It's also a working writeup of a Helius integration: the whole ingestion path runs on Helius webhooks / Laserstream plus RPC, watching the one loader address that sees every deploy, upgrade, and authority change on the network.

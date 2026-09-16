@@ -10,11 +10,13 @@ export function fmtDate(input: string | Date): string {
   return `${day} ${MONTHS[d.getUTCMonth()]} ${d.getUTCFullYear()}`;
 }
 
-// "Jul 04" — short month + day, for timeline rows where the year is the group label.
+// "07.04" — numeric month.day, for year-page rows where the year is the page
+// title. Month first so a date-sorted list reads as a sort key down the column.
 export function fmtMonthDay(input: string | Date): string {
   const d = typeof input === 'string' ? new Date(input) : input;
+  const month = String(d.getUTCMonth() + 1).padStart(2, '0');
   const day = String(d.getUTCDate()).padStart(2, '0');
-  return `${MONTHS[d.getUTCMonth()]} ${day}`;
+  return `${month}.${day}`;
 }
 
 export function yearOf(input: string | Date): number {

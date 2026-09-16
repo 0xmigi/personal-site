@@ -47,25 +47,23 @@ const linkClass =
 <Page title={`${year} — Azuolas`} description={`Everything from ${year}.`}>
   <Header section={String(year)} />
 
-  <div class="mt-4 flex items-start gap-8 py-3">
+  <div class="mt-4 flex items-start gap-6 py-3">
     <YearHeatmap year={year} activity={activity} baseline={baseline} />
 
-    <ul class="min-w-0 flex-1 space-y-4 text-[14px]">
+    <ul class="grid min-w-0 flex-1 grid-cols-[minmax(0,1fr)_auto_auto] gap-x-2.5 gap-y-2.5 text-[14px]">
       {items.map((it) => (
         <li
-          class="min-w-0"
+          class="col-span-3 grid grid-cols-subgrid items-baseline"
           data-commits={it.commits ? JSON.stringify(it.commits) : undefined}
           data-workdays={workDaysByHref[it.href] ? JSON.stringify(workDaysByHref[it.href]) : undefined}
         >
-          {/* title on its own line — full width, so it rarely wraps and never
-             collides with the meta below */}
-          <a href={it.href} class={linkClass}>{it.title}</a>
-          {/* category + date, indented under the title in the muted grey */}
-          <div class="mt-0.5 flex items-baseline gap-1.5 pl-3 text-neutral-400">
-            <span>{it.tag}</span>
-            <span aria-hidden="true">·</span>
-            <time class="tabular-nums">{fmtMonthDay(it.date)}</time>
-          </div>
+          {/* one row per entry: title | tag | date. the list is one grid and each
+             row a subgrid, so the tag and date columns share widths across the
+             whole page and line up; a long title wraps under itself (the
+             column is too narrow to truncate gracefully) */}
+          <a href={it.href} class={`min-w-0 ${linkClass}`}>{it.title}</a>
+          <span class="text-neutral-400">{it.tag}</span>
+          <time class="text-right tabular-nums text-neutral-400">{fmtMonthDay(it.date)}</time>
         </li>
       ))}
     </ul>

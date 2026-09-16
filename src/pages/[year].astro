@@ -62,7 +62,7 @@ const linkClass =
              whole page and line up; a long title wraps under itself (the
              column is too narrow to truncate gracefully) */}
           <a href={it.href} class={`min-w-0 ${linkClass}`}>{it.title}</a>
-          <span class="text-neutral-400">{it.tag}</span>
+          <span class="text-right text-neutral-400">{it.tag}</span>
           <time class="text-right tabular-nums text-neutral-400">{fmtMonthDay(it.date)}</time>
         </li>
       ))}

@@ -53,10 +53,12 @@ carousel), optional `agent: true` (adds a
 
 ### Rules that matter
 
-- **Title length: keep it ≤ ~30 characters.** The home timeline shows titles on a
-  single line in a fixed 375px column; anything longer is **truncated with an
-  ellipsis** (it will not wrap or break the layout — the full title still shows in
-  the article). Prefer short, punchy titles; put detail in `summary`/body.
+- **Title length: keep it ≤ ~30 characters.** Every page is a 375px column on a
+  phone and a 600px one on desktop (md and up). The home timeline shows titles on
+  a single line; on a phone anything longer is **truncated with an ellipsis** (it
+  will not wrap or break the layout — the full title still shows in the article),
+  and on the year pages it wraps. Prefer short, punchy titles; put detail in
+  `summary`/body.
 - **Work entries are placed by their END date**, not start. Set `date` to the end of
   the role (ongoing → today) and `start` to its beginning; the full range lives in
   `period`, and `start`→`date` drives the grey weekday baseline on the grids.

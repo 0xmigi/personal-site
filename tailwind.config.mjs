@@ -6,10 +6,9 @@ export default {
   theme: {
     extend: {
       maxWidth: {
-        // the classic mobile design width (iPhone logical px) — desktop shows
-        // exactly what a phone shows
+        // the classic mobile design width (iPhone logical px) — what a phone shows
         column: '375px',
-        // article pages on desktop: a comfortable reading measure at 14px
+        // every page on desktop (md and up): a comfortable reading measure at 14px
         reading: '600px',
       },
     },

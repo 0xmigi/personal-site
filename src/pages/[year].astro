@@ -59,8 +59,9 @@ const linkClass =
         >
           {/* one row per entry: title | tag | date. the list is one grid and each
              row a subgrid, so the tag and date columns share widths across the
-             whole page and line up; a long title wraps under itself (the
-             column is too narrow to truncate gracefully) */}
+             whole page and line up; on desktop the wide column fits every title on
+             one line, on a phone a long title wraps under itself (the column
+             is too narrow to truncate gracefully) */}
           <a href={it.href} class={`min-w-0 ${linkClass}`}>{it.title}</a>
           <span class="text-right text-neutral-400">{it.tag}</span>
           <time class="text-right tabular-nums text-neutral-400">{fmtMonthDay(it.date)}</time>

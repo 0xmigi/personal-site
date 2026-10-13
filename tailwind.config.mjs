@@ -9,6 +9,8 @@ export default {
         // the classic mobile design width (iPhone logical px) — desktop shows
         // exactly what a phone shows
         column: '375px',
+        // article pages on desktop: a comfortable reading measure at 14px
+        reading: '600px',
       },
     },
   },

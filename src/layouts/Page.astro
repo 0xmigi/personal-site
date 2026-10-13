@@ -7,12 +7,15 @@ interface Props {
   description?: string;
   /** Pin the page to the viewport — no document scroll; a child scrolls instead. */
   lock?: boolean;
+  /** Article pages: widen the column on desktop for reading; phones are unchanged. */
+  wide?: boolean;
 }
 
 const {
   title = 'Azuolas',
   description = 'Engineer, founder, builder.',
   lock = false,
+  wide = false,
 } = Astro.props;
 ---
 
@@ -37,6 +40,7 @@ const {
     <main
       class:list={[
         'mx-auto max-w-column px-6 py-16 md:py-24',
+        wide && 'md:max-w-reading',
         lock && 'flex h-full flex-col',
       ]}
     >

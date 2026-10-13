@@ -7,6 +7,7 @@ type Frontmatter = {
   draft?: boolean;
   tag?: string;
   repo?: string | string[];
+  project?: string; // videos + writing: slug of the project it belongs to (shown in that project's header carousel)
   start?: string | Date; // work only: role start date (date = end)
   pin?: number; // manual sort weight: floats an entry up within its year (higher = higher)
 };

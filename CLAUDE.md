@@ -28,10 +28,13 @@ The filename (minus `.mdx`) is the slug.
 ### Frontmatter
 
 Common: `title`, `date` (YYYY-MM-DD), optional `summary`, optional `tag` (overrides
-the default above), optional `draft: true` (hides it), optional `agent: true` (adds a
+the default above), optional `draft: true` (hides it), optional `project` (videos +
+writing: a project slug — the entry then shows in that project page's header
+carousel), optional `agent: true` (adds a
 "— written by azuolas' agent" byline, for content an agent drafted).
 
 - **projects**: also `url` (live link — purchased domain first, hosted fallback),
+  optional `icon` (path in `/public`, shown beside the links in the page header),
   optional `repo` (GitHub `owner/name`, or a list `["owner/a", "owner/b"]` for a
   multi-repo project). All repos' commits combine into the **always-on grey
   activity grid** — the dots behind the home timeline (month-week cells) and the
@@ -45,6 +48,8 @@ the default above), optional `draft: true` (hides it), optional `agent: true` (a
   grids ("was working here"), under any commit heat. On desktop, hovering a work
   entry tints its whole span orange (the same bonus as hovering a project).
 - **videos**: also `src` (mp4 path in `/public`), `poster`.
+- **writing**: also `excerpt`, optional `image` (path in `/public` — the picture on
+  its carousel card; without one the card shows the excerpt).
 
 ### Rules that matter
 

@@ -14,51 +14,94 @@ export async function getStaticPaths() {
 const { mod } = Astro.props as { mod: any };
 const fm = mod.frontmatter;
 const Content = mod.Content;
-const displayUrl = fm.url?.replace(/^https?:\/\//, '').replace(/\/$/, '');
 
-// Live preview renders the site at a desktop width, scaled to a 16:9 landscape box.
-const DESK_W = 1280;
-const DESK_H = 720;
+// Header links: the live site, then its repo(s). One repo reads "GitHub"; several
+// are told apart by name.
+const repos: string[] = fm.repo ? (Array.isArray(fm.repo) ? fm.repo : [fm.repo]) : [];
+const links = [
+  ...(fm.url ? [{ href: fm.url, label: fm.url.replace(/^https?:\/\//, '').replace(/\/$/, '') }] : []),
+  ...repos.map((r) => ({
+    href: `https://github.com/${r}`,
+    label: repos.length > 1 ? r.split('/').pop()! : 'GitHub',
+  })),
+];
+
+// Header carousel: videos and writing that name this project in their frontmatter
+// (`project: <slug>`), newest first.
+const { slug } = Astro.params;
+const tagged = (modules: Record<string, any>, base: string, kind: 'video' | 'writing') =>
+  Object.entries(modules)
+    .filter(([, m]) => m.frontmatter.project === slug && !m.frontmatter.draft)
+    .map(([path, m]) => ({
+      ...m.frontmatter,
+      kind,
+      href: `${base}/${path.split('/').pop()!.replace(/\.mdx$/, '')}`,
+    }));
+const media = [
+  ...tagged(import.meta.glob('../../videos/*.mdx', { eager: true }), '/videos', 'video'),
+  ...tagged(import.meta.glob('../../posts/*.mdx', { eager: true }), '/writing', 'writing'),
+].sort((a, b) => new Date(b.date).valueOf() - new Date(a.date).valueOf());
+
+const linkClass =
+  'text-neutral-900 underline decoration-neutral-300 decoration-1 underline-offset-[3px] hover:decoration-neutral-900 transition-colors';
 ---
 
-<Page title={`${fm.title} — Azuolas`} description={fm.summary}>
+<Page title={`${fm.title} — Azuolas`} description={fm.summary} wide>
   <Header section={fm.title} />
 
-  {fm.url && (
-    <a
-      href={fm.url}
-      target="_blank"
-      rel="noopener noreferrer"
-      class="mt-6 block overflow-hidden rounded-lg"
-    >
-      <div class="preview">
-        <iframe
-          src={fm.url}
-          title={`${fm.title} preview`}
-          loading="lazy"
-          scrolling="no"
-          tabindex="-1"
-          sandbox="allow-scripts allow-same-origin"
-          data-w={DESK_W}
-          data-h={DESK_H}
-        />
-      </div>
-    </a>
-  )}
-
-  <div class="mt-8 space-y-0.5 text-[14px] text-neutral-500">
-    <p class="tabular-nums">{fmtDate(fm.date)}</p>
-    {displayUrl && (
-      <p>
-        <a
-          href={fm.url}
-          target="_blank"
-          rel="noopener noreferrer"
-          class="underline decoration-neutral-300 decoration-1 underline-offset-2 transition-colors hover:text-neutral-900 hover:decoration-neutral-500"
-        >{displayUrl}</a>
-      </p>
-    )}
+  <div class="mt-6 flex items-center gap-3 text-[14px] text-neutral-500">
+    {fm.icon && <img src={fm.icon} alt="" class="h-9 w-9 shrink-0 object-contain" />}
+    <div class="min-w-0 space-y-0.5">
+      {links.length > 0 && (
+        <p class="flex flex-wrap gap-x-4">
+          {links.map((l) => (
+            <a
+              href={l.href}
+              target="_blank"
+              rel="noopener noreferrer"
+              class="underline decoration-neutral-300 decoration-1 underline-offset-2 transition-colors hover:text-neutral-900 hover:decoration-neutral-500"
+            >{l.label}</a>
+          ))}
+        </p>
+      )}
+      <p class="tabular-nums">{fmtDate(fm.date)}</p>
+    </div>
   </div>
+
+  {media.length > 0 && (
+    <div class="mt-8 text-[14px]">
+      <div data-carousel class="carousel flex snap-x snap-mandatory gap-3 overflow-x-auto">
+        {media.map((m) => (
+          <figure class:list={['shrink-0 snap-start', media.length > 1 ? 'w-[86%]' : 'w-full']}>
+            {m.kind === 'video' ? (
+              <video class="aspect-video w-full rounded-md bg-neutral-50" controls preload="none" playsinline poster={m.poster}>
+                <source src={m.src} type="video/mp4" />
+                Your browser doesn't support video playback.
+              </video>
+            ) : (
+              <a href={m.href} class="block aspect-video overflow-hidden rounded-md bg-neutral-50">
+                {m.image ? (
+                  <img src={m.image} alt="" loading="lazy" class="h-full w-full object-cover object-top" />
+                ) : (
+                  <span class="block p-5 leading-relaxed text-neutral-500">{m.excerpt}</span>
+                )}
+              </a>
+            )}
+            <figcaption class="mt-2 flex items-baseline justify-between gap-3">
+              <a href={m.href} class={linkClass}>{m.title}</a>
+              <span class="shrink-0 text-neutral-500">{m.kind}</span>
+            </figcaption>
+          </figure>
+        ))}
+      </div>
+      {media.length > 1 && (
+        <p class="mt-3 flex justify-end gap-4 text-neutral-500">
+          <button type="button" data-carousel-prev aria-label="Previous" class="transition-colors hover:text-neutral-900">&larr;</button>
+          <button type="button" data-carousel-next aria-label="Next" class="transition-colors hover:text-neutral-900">&rarr;</button>
+        </p>
+      )}
+    </div>
+  )}
 
   <article
     class="mt-8 prose prose-neutral max-w-none
@@ -76,35 +119,25 @@ const DESK_H = 720;
 </Page>
 
 <style>
-  .preview {
-    position: relative;
-    width: 100%;
-    aspect-ratio: 1280 / 720;
+  /* the strip swipes / scrolls sideways; the next card peeking in is the cue */
+  .carousel {
+    scrollbar-width: none;
   }
-  .preview iframe {
-    position: absolute;
-    top: 0;
-    left: 0;
-    border: 0;
-    transform-origin: top left;
-    pointer-events: none;
+  .carousel::-webkit-scrollbar {
+    display: none;
   }
 </style>
 
 <script is:inline>
-  function fitPreviews() {
-    document.querySelectorAll('.preview').forEach((box) => {
-      const f = box.querySelector('iframe');
-      if (!f) return;
-      const w = parseInt(f.dataset.w, 10);
-      const h = parseInt(f.dataset.h, 10);
-      const scale = box.clientWidth / w;
-      f.style.width = w + 'px';
-      f.style.height = h + 'px';
-      f.style.transform = 'scale(' + scale + ')';
-    });
-  }
-  fitPreviews();
-  window.addEventListener('resize', fitPreviews);
-  window.addEventListener('load', fitPreviews);
+  // carousel arrows step one card at a time — for a mouse, which can't swipe
+  document.querySelectorAll('[data-carousel]').forEach((strip) => {
+    const step = (dir) => {
+      const card = strip.querySelector('figure');
+      if (!card) return;
+      strip.scrollBy({ left: dir * (card.getBoundingClientRect().width + 12), behavior: 'smooth' });
+    };
+    const wrap = strip.parentElement;
+    wrap.querySelector('[data-carousel-prev]')?.addEventListener('click', () => step(-1));
+    wrap.querySelector('[data-carousel-next]')?.addEventListener('click', () => step(1));
+  });
 </script>

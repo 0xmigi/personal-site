@@ -1,6 +1,7 @@
 ---
 import { yearOf, eachWeekday } from '../lib/date';
 import { getCommitActivity, getWorkSpans, byYearPinDate } from '../lib/content';
+import { pickForHome } from '../lib/timeline';
 
 export interface TimelineItem {
   title: string;
@@ -175,7 +176,7 @@ const dotsWrap = 'ml-3 mr-4 mt-[2px] grid shrink-0 grid-cols-[repeat(4,4px)] ite
 
         {/* titles only — tags + exact dates live on the year pages */}
         <ul data-titles class="min-w-0 flex-1 space-y-2.5">
-          {d.items.slice(0, 4).map((it) => (
+          {pickForHome(d.items).map((it) => (
             <li class="flex items-baseline">
               <a href={it.href} class={titleClass} data-tl-link={it.cell}>{it.title}</a>
             </li>
@@ -511,6 +512,8 @@ const dotsWrap = 'ml-3 mr-4 mt-[2px] grid shrink-0 grid-cols-[repeat(4,4px)] ite
 </style>
 
 <script>
+  import { pickForHome, HOME_SLOTS } from '../lib/timeline';
+
   // the agent goat: wanders his line, watches the cursor, and gets braver
   // about you the longer you're around
   const walk = document.getElementById('goat-walk');
@@ -865,12 +868,14 @@ const dotsWrap = 'ml-3 mr-4 mt-[2px] grid shrink-0 grid-cols-[repeat(4,4px)] ite
       for (const d of YEARS) {
         const row = modules.querySelector(`[data-row="${d.year}"]`) as HTMLElement | null;
         if (!row) continue;
-        const items = active ? d.items.filter((it) => it.type === active) : d.items;
+        // a filter lists that type newest-first; no filter is the home pick
+        const items = active
+          ? d.items.filter((it) => it.type === active).slice(0, HOME_SLOTS)
+          : pickForHome(d.items);
         // hide a year with nothing of this type; leave its commit dots as they
         // are — only the title list re-renders
         row.style.display = items.length ? '' : 'none';
         row.querySelector('[data-titles]')!.innerHTML = items
-          .slice(0, 4)
           .map(
             (it) =>
               `<li class="flex items-baseline"><a href="${it.href}" class="${LINK_CLASS}" data-tl-link="${it.cell}">${it.title}</a></li>`,
